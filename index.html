@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ป้อนข้าวมะขาม 🐟</title>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#fbe3ea;font-family:'Mali',sans-serif;color:#6b3f4f;user-select:none;-webkit-user-select:none}
+  #scene{position:fixed;inset:0}
+  #scene canvas{display:block;touch-action:none}
+  button{font-family:inherit;border:none;cursor:pointer;color:#6b3f4f;border-radius:18px;transition:transform .12s}
+  button:active{transform:scale(.95)}
+  .glass{background:rgba(255,255,255,.74);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.85);box-shadow:0 6px 20px rgba(214,120,150,.18)}
+
+  #hud{position:fixed;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(540px,94vw);border-radius:22px;padding:9px 14px 10px;z-index:5;display:none}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.76rem}
+  #sound{background:none;padding:0 2px;font-size:1.1rem}
+  .count{text-align:center;font-size:1rem;margin:2px 0 6px}
+  .count b{font-size:1.9rem;transition:color .2s}
+  .meter{position:relative;height:12px;background:#fbe0e8;border-radius:8px;overflow:hidden;margin-bottom:6px}
+  #zone{position:absolute;top:0;bottom:0;background:rgba(120,200,120,.3);border-left:2px solid #6cbf6c;border-right:2px solid #6cbf6c}
+  #fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:8px;transition:width .15s,background .2s;background:#f6b26b}
+  .mini{display:inline-block;width:52px;height:7px;background:#fbe0e8;border-radius:4px;overflow:hidden;vertical-align:middle;margin-left:3px}
+  .mini i{display:block;height:100%;background:#ff8fb1;width:100%;transition:width .3s}
+
+  #bottom{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(540px,94vw);z-index:5;display:none;flex-direction:column;gap:6px;align-items:stretch}
+  .hint{text-align:center;font-size:.74rem;padding:5px 10px;border-radius:12px;align-self:center}
+  #serve{background:linear-gradient(135deg,#ff9cbc,#ff7aa2);color:#fff;font-size:1.05rem;padding:13px;box-shadow:0 6px 18px rgba(255,110,150,.4)}
+  #serve:disabled{opacity:.45}
+
+  .bubble{position:fixed;z-index:6;padding:6px 12px;border-radius:14px;font-size:.92rem;white-space:nowrap;transform:translate(-50%,-100%);opacity:0;transition:opacity .25s;pointer-events:none}
+  .bubble.show{opacity:1}
+  .float{position:fixed;z-index:6;pointer-events:none;font-size:1.5rem;animation:up 1.6s ease-out both}
+  @keyframes up{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),-110px) scale(1.25);opacity:0}}
+
+  #banner{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.8);z-index:8;text-align:center;opacity:0;transition:all .35s;pointer-events:none;padding:16px 26px;border-radius:24px;min-width:240px}
+  #banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #banner h2{font-size:1.45rem} #banner p{font-size:1rem;margin-top:4px}
+
+  .screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;
+    background:rgba(255,236,242,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:opacity .7s}
+  .screen.hide{opacity:0;pointer-events:none}
+  .screen .big{font-size:3.2rem;animation:bob 1.4s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-10px) rotate(-8deg)}}
+  .screen h2{font-size:1.7rem}
+  .how{list-style:none;text-align:left;padding:14px 18px;border-radius:18px;font-size:.92rem;line-height:1.9}
+  #start{background:#ff86ab;color:#fff;font-size:1.1rem;padding:13px 34px;box-shadow:0 6px 16px rgba(255,110,150,.4)}
+  #start:disabled{opacity:.6}
+
+  .modal{position:fixed;inset:0;background:rgba(107,63,79,.4);display:none;align-items:center;justify-content:center;z-index:30;padding:20px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .modal.show{display:flex}
+  .card{background:#fff;border-radius:26px;padding:24px 22px;max-width:380px;width:100%;text-align:center;animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes pop{from{transform:scale(.6);opacity:0}}
+  .card h2{margin-bottom:6px}
+  .stars{font-size:2.6rem;letter-spacing:4px;margin:4px 0 8px}
+  .stars span{display:inline-block;animation:starpop .5s both}
+  @keyframes starpop{from{transform:scale(0) rotate(-120deg)}}
+  .say{font-size:1.05rem;margin-bottom:8px}
+  .stat{font-size:.85rem;opacity:.8;line-height:1.7}
+  .pts{font-size:1.2rem;font-weight:700;color:#ff6f98;margin-top:6px}
+  .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .btns button{padding:10px 18px;background:#ffe3ec;font-size:.95rem}
+  .btns button.primary{background:#ff86ab;color:#fff}
+  #letterText{line-height:1.8;white-space:pre-line;min-height:7em}
+  .screen{justify-content:flex-start;overflow-y:auto}
+  .screen > :first-child{margin-top:auto} .screen > :last-child{margin-bottom:auto}
+  .screen .btns{margin-top:4px}
+  .ghost{background:#fff;font-size:1rem;padding:12px 22px;box-shadow:0 4px 12px rgba(214,120,150,.2)}
+  .lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(340px,90vw)}
+  .lvgrid button{padding:6px 0;font-size:.85rem;background:#fff;line-height:1.25;border-radius:12px}
+  .lvgrid button small{display:block;font-size:.55rem;letter-spacing:-1px}
+  .lvgrid button:disabled{opacity:.45}
+  #shop{z-index:35}
+  .shopcard{max-height:88vh;display:flex;flex-direction:column}
+  .coins{font-size:1.1rem}
+  .tabs{display:flex;gap:8px;justify-content:center;margin-top:8px}
+  .tabs button{padding:7px 14px;background:#ffe3ec;font-size:.85rem}
+  .tabs button.on{background:#ff86ab;color:#fff}
+  #shopList{overflow-y:auto;text-align:left;display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .item{display:flex;gap:10px;align-items:center;background:#fff4f8;border-radius:16px;padding:9px 10px}
+  .item .ic{font-size:1.7rem;width:38px;text-align:center}
+  .item .tx{flex:1;font-size:.78rem;line-height:1.4}
+  .item .tx b{font-size:.9rem}
+  .item .dots{color:#ff86ab;font-size:.75rem;letter-spacing:2px}
+  .item button{padding:8px 10px;font-size:.78rem;background:#ff86ab;color:#fff;white-space:nowrap}
+  .item button:disabled{background:#eddde3;color:#a58a95}
+  .item button.worn{background:#6cc47c}
+  #windTag{font-weight:700;color:#3fa0d8}
+  .combo{align-self:center;font-weight:700;font-size:1.25rem;color:#ff7a2f;text-shadow:0 2px 0 #fff,0 0 12px rgba(255,160,60,.6);opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;pointer-events:none;min-height:1.6em}
+  .combo.show{opacity:1;transform:scale(1)}
+  .combo.bump{animation:bump .25s}
+  @keyframes bump{50%{transform:scale(1.3)}}
+  .pop{position:fixed;z-index:7;pointer-events:none;font-weight:700;font-size:1.15rem;transform:translate(-50%,-50%);animation:popup 1.1s ease-out both;white-space:nowrap;text-shadow:0 2px 0 #fff,0 0 8px #fff}
+  @keyframes popup{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-150%) scale(1)}}
+  .perfect{position:fixed;left:50%;top:36%;z-index:9;font-size:3.2rem;font-weight:700;color:#ff5c93;text-shadow:0 4px 0 #fff,0 0 30px rgba(255,120,170,.9);animation:perf 2s both;pointer-events:none;white-space:nowrap}
+  @keyframes perf{0%{transform:translate(-50%,-50%) scale(0) rotate(-20deg)}25%{transform:translate(-50%,-50%) scale(1.3) rotate(5deg)}40%{transform:translate(-50%,-50%) scale(1) rotate(0)}85%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-70%)}}
+  .confetti{position:fixed;top:-20px;z-index:9;width:9px;height:14px;border-radius:2px;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+  .scratch{position:fixed;z-index:4;width:230px;height:230px;transform:translate(-50%,-50%) rotate(var(--rot)) scale(.6);opacity:0;transition:opacity .25s,transform .25s;cursor:pointer;filter:drop-shadow(0 2px 3px rgba(80,30,50,.35))}
+  .scratch.in{opacity:1;transform:translate(-50%,-50%) rotate(var(--rot)) scale(1)}
+  .scratch.fade{opacity:0;transition:opacity .6s}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/rapier.es.js"
+} }
+</script>
+</head>
+<body>
+
+<div id="scene"></div>
+
+<div id="intro" class="screen">
+  <div class="big">🐟</div>
+  <h2>ป้อนข้าวมะขาม</h2>
+  <p>มะขามหิวแล้ว! เทอาหารเม็ดให้ได้พอดีกับที่มะขามขอ</p>
+  <ul class="how glass">
+    <li>👆 <b>กดค้าง</b> = เท • ↔️ <b>ลาก</b> = เล็งชาม</li>
+    <li>🎯 พอดีเป๊ะ + ไม่หก = ⭐⭐⭐ ได้ 🪙 ไปอัปเกรด</li>
+    <li>🐟 ปลาทองได้โบนัส • 🤚 แตะมะขามให้รอได้นานขึ้น</li>
+    <li>🔥 เทลงกลางชามติดๆ กันได้คอมโบ</li>
+    <li>🐭 แตะไล่หนู • 🔴🌿 แตะเก็บของแปลก • 😼 มะขามชอบข่วน!</li>
+  </ul>
+  <div id="levels" class="lvgrid"></div>
+  <div class="btns"><button id="start" disabled>กำลังโหลดฟิสิกส์...</button><button id="shopBtn" class="ghost">🛒 ร้านค้า</button></div>
+</div>
+
+<div id="hud" class="glass">
+  <div class="row"><span id="lvl">ด่าน 1</span><span id="windTag"></span><span>🪙 <b id="score">0</b> <button id="sound">🔊</button></span></div>
+  <div class="count">🥣 <b id="cnt">0</b> / <span id="tgt">15</span> เม็ด</div>
+  <div class="meter"><div id="zone"></div><div id="fill"></div></div>
+  <div class="row">
+    <span>💦 หก <b id="spill">0</b></span>
+    <span>🐟 ปลาทอง <b id="fish">0</b></span>
+    <span>😺 รอได้อีก<span class="mini"><i id="pat"></i></span></span>
+  </div>
+</div>
+
+<div id="bottom">
+  <div id="combo" class="combo"></div>
+  <div class="hint glass">กดค้างเพื่อเท • ลากเพื่อเล็งชาม</div>
+  <button id="serve" disabled>🍽️ เสิร์ฟให้มะขาม</button>
+</div>
+
+<div id="banner" class="glass"><h2 id="bTitle"></h2><p id="bSub"></p></div>
+<div class="bubble glass" id="bubble">เมี้ยว~</div>
+
+<div id="result" class="modal">
+  <div class="card">
+    <h2 id="rTitle">ด่าน 1</h2>
+    <div class="stars" id="rStars"></div>
+    <div class="say" id="rSay"></div>
+    <div class="stat" id="rStat"></div>
+    <div class="pts" id="rPts"></div>
+    <div class="btns" id="rBtns"></div>
+  </div>
+</div>
+
+<div id="shop" class="modal">
+  <div class="card shopcard">
+    <h2>🛒 ร้านของมะขาม</h2>
+    <div class="coins">🪙 <b id="coins">0</b> เหรียญ</div>
+    <div class="tabs"><button data-tab="up" class="on">⚙️ อัปเกรด</button><button data-tab="cos">🎀 แต่งตัว</button></div>
+    <div id="shopList"></div>
+    <div class="btns"><button class="primary" id="shopClose">เสร็จแล้ว</button></div>
+  </div>
+</div>
+
+<div id="letter" class="modal">
+  <div class="card">
+    <h2>💌 จากมะขาม (และคนข้างๆ)</h2>
+    <p id="letterText"></p>
+    <div class="btns"><button class="primary" id="closeLetter">เมี้ยวว 💗</button></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import RAPIER from 'rapier';
+
+// ================= แก้ข้อความจดหมายตรงนี้ =================
+const LETTER = `เมี้ยว~ มะขามเองนะ
+ขอบคุณที่ป้อนข้าวมะขามจนอิ่มแปล้เลย
+มีคนฝากมาบอกว่า...
+"รักเธอที่สุดเลย
+ขอบคุณที่อยู่ด้วยกันทุกวันนะ"
+(มะขามก็รักเหมือนกัน 🐾)`;
+// ==========================================================
+
+// ด่านต่างๆ: target = จำนวนเม็ดที่มะขามขอ, h = ความสูงที่เท, move = ชามขยับ, wind = ลม (−ซ้าย/+ขวา), scale = ขนาดชาม
+const LEVELS = [
+  { name: 'อุ่นเครื่อง', target: 15, h: 1.1, move: 'none', patience: 30 },
+  { name: 'หิวขึ้นเรื่อยๆ', target: 25, h: 1.4, move: 'none', patience: 32 },
+  { name: 'ชามไหลไปมา', target: 20, h: 1.3, move: 'slide', amp: 1.0, period: 6, patience: 34 },
+  { name: 'ชามจิ๋ว 🔍', target: 12, h: 1.3, move: 'none', scale: 0.72, patience: 32 },
+  { name: 'มะขามเขี่ยชามเล่น', target: 30, h: 1.6, move: 'slide', amp: 1.5, period: 4.2, patience: 36 },
+  { name: 'พัดลมเป่า 🌬️', target: 25, h: 1.5, move: 'none', wind: -9, patience: 36 },
+  { name: 'ชามโยกเยก 🌀', target: 25, h: 1.5, move: 'rock', tilt: 0.2, period: 3.2, patience: 36 },
+  { name: 'วนเป็นวง', target: 30, h: 1.7, move: 'circle', amp: 1.2, period: 5, patience: 38 },
+  { name: 'พายุแมว 🌪️', target: 30, h: 1.7, move: 'slide', amp: 1.1, period: 5, wind: 9, windAlt: 4, patience: 40 },
+  { name: 'ด่านสุดท้าย 💌', target: 40, h: 1.8, move: 'circle', amp: 1.0, period: 5.5, wind: -6, scale: 0.9, patience: 45 },
+];
+const UPGRADES = [
+  { id: 'rim', ic: '🥣', name: 'ชามขอบสูง', desc: 'ขอบชามสูงและกว้างขึ้น เม็ดกระเด็นออกยากขึ้น', cost: [150, 300, 500] },
+  { id: 'mat', ic: '🧽', name: 'ก้นชามซับแรงกระแทก', desc: 'เม็ดเด้งน้อยลงเวลาตกกระทบ', cost: [120, 250, 420] },
+  { id: 'scoop', ic: '🥄', name: 'ที่ตักรุ่นโปร', desc: 'เทแม่นขึ้น เม็ดกระจายน้อยลง', cost: [120, 260, 450] },
+  { id: 'magnet', ic: '🧲', name: 'แม่เหล็กดูดเม็ด', desc: 'เม็ดที่ตกใกล้ขอบจะถูกดูดเข้าชาม', cost: [300, 600] },
+  { id: 'treat', ic: '🍬', name: 'ขนมแมว', desc: 'มะขามรอได้นานขึ้น 20% ต่อขั้น', cost: [80, 180, 320] },
+  { id: 'lucky', ic: '🐟', name: 'ปลาทองนำโชค', desc: 'ปลาทองออกบ่อยขึ้นและได้เหรียญมากขึ้น', cost: [120, 250, 400] },
+];
+const COSMETICS = [
+  { id: 'collar', ic: '🔔', name: 'ปลอกคอกระดิ่ง', desc: 'ปลอกคอสีแดงกับกระดิ่งทอง', cost: 150 },
+  { id: 'bow', ic: '🎀', name: 'โบว์ชมพู', desc: 'โบว์น่ารักติดที่หู', cost: 120 },
+  { id: 'crown', ic: '👑', name: 'มงกุฎเจ้าหญิง', desc: 'มะขามคือเจ้าหญิงของบ้าน', cost: 400 },
+  { id: 'gold', ic: '✨', name: 'ชามทองคำ', desc: 'เปลี่ยนชามเป็นสีทองเงาวับ', cost: 300 },
+];
+// เซฟความคืบหน้าไว้ในเครื่อง (เหรียญ ด่าน อัปเกรด ของแต่งตัว)
+const SAVE_KEY = 'makham-feed-v1';
+const save = { coins: 0, unlocked: 0, up: {}, own: {}, wear: {}, best: [] };
+try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (_) {}
+const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (_) {} };
+const tier = id => save.up[id] || 0;
+
+const $ = id => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
+function lerpAngle(a, b, t) {
+  const d = ((b - a + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+  return a + d * t;
+}
+
+/* ================= renderer / scene ================= */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping;   // สีสด ไม่ซีดแบบ ACES
+renderer.toneMappingExposure = 0.95;
+$('scene').appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffdce8);
+scene.fog = new THREE.Fog(0xffdce8, 14, 26);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
+const camLook = new THREE.Vector3(0.6, 0.8, 0.4), camOffset = new THREE.Vector3(), camFocus = new THREE.Vector3(0.6, 0, 0.4);
+let portrait = false;
+function setCamera() {
+  portrait = innerWidth / innerHeight < 0.8;
+  camera.aspect = innerWidth / innerHeight;
+  camera.fov = portrait ? 50 : 42;
+  camOffset.set(0, portrait ? 3.3 : 3.0, portrait ? 4.6 : 4.0);
+  camLook.y = portrait ? 0.7 : 0.9;
+  camera.position.copy(camLook).add(camOffset);
+  camera.lookAt(camLook);
+  camera.updateProjectionMatrix();
+}
+setCamera();
+// มะขามนั่งรอ: จอแนวตั้ง = หลังชาม, จอแนวนอน = ข้างชาม
+const waitSpot = () => portrait ? new THREE.Vector3(0.9, 0, -1.3) : new THREE.Vector3(2.6, 0, 0);
+
+/* ---------- post-processing: bloom เฉพาะจุดสะท้อนแสง ---------- */
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: 4 }));
+composer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+composer.setSize(innerWidth, innerHeight);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.3, 0.4, 1.2));
+composer.addPass(new OutputPass());
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); setCamera(); });
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xf0c8a0, 0.6));
+const sun = new THREE.DirectionalLight(0xffe6c4, 2.6);
+sun.position.set(-3, 7, 5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 1, far: 22 });
+sun.shadow.normalBias = 0.02;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffd6ea, 0.45); fill.position.set(5, 3, 6); scene.add(fill);
+const winLight = new THREE.PointLight(0xbfe6ff, 5, 8, 2);
+winLight.position.set(1.6, 2.8, -3.2);
+scene.add(winLight);
+
+/* ================= helpers ================= */
+const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...o });
+function mesh(geo, mat, { x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0, cast = true, receive = true } = {}, parent = scene) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz);
+  m.castShadow = cast; m.receiveShadow = receive;
+  parent.add(m);
+  return m;
+}
+function canvasTex(w, h, draw, repeat) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  return t;
+}
+function heartPath(g, x, y, s) {
+  g.beginPath(); g.moveTo(x, y + s * 0.9);
+  g.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.6, y - s * 1.4, x, y - s * 0.4);
+  g.bezierCurveTo(x + s * 0.6, y - s * 1.4, x + s * 1.6, y - s * 0.2, x, y + s * 0.9);
+  g.closePath();
+}
+
+/* ================= textures ================= */
+const woodTex = canvasTex(512, 512, (g, w, h) => {
+  const n = 8, ph = h / n;
+  for (let i = 0; i < n; i++) {
+    g.fillStyle = `hsl(${30 + rand(-3, 3)},${56 + rand(-5, 5)}%,${64 + rand(-4, 4)}%)`;
+    g.fillRect(0, i * ph, w, ph);
+    for (let k = 0; k < 7; k++) {
+      g.strokeStyle = `rgba(150,95,45,${rand(0.06, 0.14)})`; g.lineWidth = rand(1, 2.5);
+      const y = i * ph + rand(6, ph - 6);
+      g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(w * 0.33, y + rand(-5, 5), w * 0.66, y + rand(-5, 5), w, y); g.stroke();
+    }
+    g.fillStyle = 'rgba(110,65,30,.28)'; g.fillRect(0, i * ph, w, 2); g.fillRect(rand(40, w - 40), i * ph, 2, ph);
+  }
+}, [4, 3.5]);
+const wallTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#ffd5e2'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#ffb8cf';
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { heartPath(g, (x * 64 + (y % 2 ? 32 : 0) + 32) % w, y * 64 + 32, 7); g.fill(); }
+}, [5, 2.5]);
+const skyTex = canvasTex(256, 256, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#8fd0f5'); gr.addColorStop(1, '#ffd9e6');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(255,255,255,.92)';
+  [[60, 80, 22], [90, 72, 28], [120, 84, 20], [180, 150, 18], [205, 142, 24], [228, 152, 16]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); });
+});
+
+// ขนของมะขาม: ลายเสือเทาน้ำตาล + แต้มส้ม + อก/ท้อง/เท้าขาว
+const C = { grey: '#8a7c6c', dark: '#3f342c', orange: '#dc8f4a' };
+function blob(g, x, y, rx, ry, rgb, w) {
+  for (const off of [0, -w, w]) {
+    g.save(); g.translate(x + off, y); g.scale(rx / ry, 1);
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, ry);
+    gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(0.6, `rgba(${rgb},1)`); gr.addColorStop(1, `rgba(${rgb},0)`);
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, ry, 0, Math.PI * 2); g.fill(); g.restore();
+  }
+}
+function furNoise(g, w, h, n = 3000) {
+  for (let k = 0; k < n; k++) {
+    g.fillStyle = Math.random() < 0.5 ? 'rgba(255,250,240,.07)' : 'rgba(40,30,20,.08)';
+    g.fillRect(rand(0, w), rand(0, h), 1.5, 4);
+  }
+}
+const furTex = canvasTex(512, 256, (g, w, h) => {
+  g.fillStyle = C.grey; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 7; i++) blob(g, rand(300, 450), rand(165, 240), rand(40, 70), rand(22, 38), '220,143,74', w);
+  for (let i = 0; i < 4; i++) blob(g, rand(-30, 40), rand(20, 80), rand(30, 50), rand(16, 28), '220,143,74', w);
+  g.globalCompositeOperation = 'multiply';
+  g.strokeStyle = '#6a5a4e'; g.lineCap = 'round';
+  for (let i = 0; i < 10; i++) {
+    const by = 14 + i * 24 + rand(-4, 4);
+    let px = null, py = null;
+    for (let x = 200; x <= 568; x += 6) {
+      const p = (x - 200) / 368, y = by + Math.sin(x * 0.04 + i * 1.7) * 6;
+      g.lineWidth = 2 + 9 * Math.sin(p * Math.PI);
+      if (px !== null) for (const off of [0, -w]) { g.beginPath(); g.moveTo(px + off, py); g.lineTo(x + off, y); g.stroke(); }
+      px = x; py = y;
+    }
+  }
+  g.fillStyle = '#7a6a5e'; g.fillRect(377, 8, 14, h - 16);
+  g.globalCompositeOperation = 'source-over';
+  const gr = g.createLinearGradient(0, 0, w, 0);
+  gr.addColorStop(0.06, 'rgba(248,244,238,0)'); gr.addColorStop(0.17, 'rgba(248,244,238,1)');
+  gr.addColorStop(0.33, 'rgba(248,244,238,1)'); gr.addColorStop(0.43, 'rgba(248,244,238,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  furNoise(g, w, h);
+});
+const headTex = canvasTex(512, 256, (g, w, h) => {
+  g.fillStyle = C.grey; g.fillRect(0, 0, w, h);
+  g.fillStyle = C.orange;
+  for (let y = 0; y < h; y++) {
+    const b1 = 128 + Math.sin(y * 0.06) * 4, b2 = 384 + Math.sin(y * 0.05) * 8;
+    g.fillRect(0, y, b1, 1); g.fillRect(b2, y, w - b2, 1);
+  }
+  g.lineCap = 'round';
+  g.strokeStyle = C.dark; g.lineWidth = 6;
+  [[146, 34, 143, 92], [162, 30, 162, 94], [180, 36, 186, 88]].forEach(([a, b, c, d]) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); });
+  g.lineWidth = 8;
+  for (let x = 215; x < 370; x += 28) { g.beginPath(); g.moveTo(x, 18); g.quadraticCurveTo(x + 10, 60, x + 4, 108); g.stroke(); }
+  g.strokeStyle = 'rgba(176,98,40,.75)'; g.lineWidth = 6;
+  [[110, 34, 113, 90], [94, 32, 92, 86]].forEach(([a, b, c, d]) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); });
+  furNoise(g, w, h, 2500);
+});
+const legTex = canvasTex(64, 128, (g, w, h) => {
+  g.fillStyle = C.grey; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(63,52,44,.85)';
+  for (let y = 18; y < h - 14; y += 22) g.fillRect(0, y, w, 8);
+  furNoise(g, w, h, 300);
+});
+
+/* ================= room ================= */
+mesh(new THREE.PlaneGeometry(16, 14), new THREE.MeshPhysicalMaterial({ map: woodTex, roughness: 0.45, clearcoat: 0.35, clearcoatRoughness: 0.25 }), { x: 3, z: 3, rx: -Math.PI / 2, cast: false });
+const wallMat = std(0xffffff, { map: wallTex, roughness: 0.95 });
+mesh(new THREE.PlaneGeometry(10, 5), wallMat, { y: 2.5, z: -4, cast: false });
+mesh(new THREE.PlaneGeometry(8, 5), wallMat, { x: -5, y: 2.5, ry: Math.PI / 2, cast: false });
+const white = std(0xffffff, { roughness: 0.6 });
+mesh(new THREE.BoxGeometry(10, 0.18, 0.06), white, { y: 0.09, z: -3.97 });
+mesh(new THREE.BoxGeometry(0.06, 0.18, 8), white, { x: -4.97, y: 0.09 });
+const win = new THREE.Group(); win.position.set(1.6, 2.7, -3.96); scene.add(win);
+mesh(new THREE.PlaneGeometry(2.2, 1.6), new THREE.MeshBasicMaterial({ map: skyTex, toneMapped: false }), { z: 0.01, cast: false }, win);
+[[0, 0.85, 2.4, 0.12], [0, -0.85, 2.4, 0.12], [-1.14, 0, 0.12, 1.82], [1.14, 0, 0.12, 1.82], [0, 0, 0.07, 1.6], [0, 0, 2.2, 0.07]]
+  .forEach(([x, y, w, h]) => mesh(new THREE.BoxGeometry(w, h, 0.1), white, { x, y, z: 0.05 }, win));
+mesh(new THREE.BoxGeometry(2.6, 0.08, 0.3), white, { y: -0.92, z: 0.13 }, win);
+const curtainMat = std(0xff9fbe, { roughness: 1 });
+[-1, 1].forEach(s => { for (let k = 0; k < 4; k++) mesh(new THREE.CylinderGeometry(0.09, 0.12, 2.3, 16), curtainMat, { x: s * (1.35 + k * 0.13), y: -0.05, z: 0.14 }, win); });
+mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.6, 12), std(0xd9a0b4), { y: 1.15, z: 0.16, rz: Math.PI / 2 }, win);
+const hs = new THREE.Shape();
+hs.moveTo(0, 0.25);
+hs.bezierCurveTo(0, 0.3, -0.05, 0.45, -0.25, 0.45);
+hs.bezierCurveTo(-0.55, 0.45, -0.55, 0.1, -0.55, 0.1);
+hs.bezierCurveTo(-0.55, -0.1, -0.35, -0.32, 0, -0.5);
+hs.bezierCurveTo(0.35, -0.32, 0.55, -0.1, 0.55, 0.1);
+hs.bezierCurveTo(0.55, 0.1, 0.55, 0.45, 0.25, 0.45);
+hs.bezierCurveTo(0.1, 0.45, 0, 0.3, 0, 0.25);
+const heartGeo = new THREE.ExtrudeGeometry(hs, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 4, curveSegments: 24 });
+heartGeo.center();
+const wallHeart = mesh(heartGeo, std(0xff4f86, { roughness: 0.3 }), { x: -2.3, y: 2.9, z: -3.88 });
+mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.008, 64), std(0xff9fc2, { roughness: 1 }), { y: 0.004, z: 0.4, cast: false });
+mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.009, 64), std(0xffd0e1, { roughness: 1 }), { y: 0.0045, z: 0.4, cast: false });
+const bed = new THREE.Group(); bed.position.set(3.6, 0, -2.7); scene.add(bed);
+mesh(new THREE.CylinderGeometry(1, 1.05, 0.14, 48), std(0xa77bff), { y: 0.07 }, bed);
+mesh(new THREE.TorusGeometry(0.88, 0.24, 20, 48), std(0xc3a1ff, { roughness: 1 }), { y: 0.28, rx: Math.PI / 2 }, bed);
+mesh(new THREE.CylinderGeometry(0.78, 0.78, 0.12, 48), std(0xf1e6ff, { roughness: 1 }), { y: 0.18 }, bed);
+const plant = new THREE.Group(); plant.position.set(-4.2, 0, -3.2); scene.add(plant);
+mesh(new THREE.CylinderGeometry(0.32, 0.24, 0.5, 32), std(0xff8a5c), { y: 0.25 }, plant);
+const leafMat = std(0x4fbf5f, { roughness: 0.6 });
+for (let i = 0; i < 9; i++) {
+  const a = i / 9 * Math.PI * 2;
+  mesh(new THREE.SphereGeometry(0.22, 20, 14), leafMat, { x: Math.cos(a) * 0.2, y: 0.75 + rand(0, 0.45), z: Math.sin(a) * 0.2, sx: 0.6, sy: 1.4, sz: 0.35, ry: -a, rz: Math.cos(a) * 0.4, rx: Math.sin(a) * 0.4 }, plant);
+}
+
+/* ================= bowl (visual) ================= */
+const BOWL0 = new THREE.Vector3(0, 0, 0.5);
+// รูปทรงชาม (ใช้ทั้งภาพและฟิสิกส์ให้ตรงกัน) — สร้างใหม่ทุกด่านตามขนาดชาม/อัปเกรด
+const BOWL = { s: 1, r0: 0.42, y0: 0.05, r1: 0.62, y1: 0.30, t: 0.06 };
+const innerR = y => BOWL.r0 + (clamp(y, BOWL.y0, BOWL.y1) - BOWL.y0) / (BOWL.y1 - BOWL.y0) * (BOWL.r1 - BOWL.r0);
+const bowl = new THREE.Group(); scene.add(bowl);
+const bowlMat = new THREE.MeshPhysicalMaterial({ color: 0x3fc1f0, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08, side: THREE.DoubleSide });
+let bowlVis = null;
+function bowlGeometry() {
+  const { s, r0, y0, r1, y1, t } = BOWL, dr = r1 - r0, dy = y1 - y0, L = Math.hypot(dr, dy), nr = dy / L * t, ny = -dr / L * t;
+  const pts = [[0.001, y0], [r0 - 0.02 * s, y0], [r0 + 0.005 * s, y0 + 0.006 * s], [r1, y1], [r1 + 0.015 * s, y1 + 0.022 * s], [r1 + 0.035 * s, y1 + 0.028 * s],
+    [r1 + 0.052 * s, y1 + 0.015 * s], [r1 + nr, y1 + ny], [r0 + nr, Math.max(0.004, y0 + ny)], [r0 + nr - 0.012 * s, 0], [0.001, 0]];
+  return new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 56);
+}
+const pawGroup = new THREE.Group(); bowl.add(pawGroup);
+const pawMat = std(0xffffff, { roughness: 0.4 });
+mesh(new THREE.CircleGeometry(0.16, 32), pawMat, { z: 0.04, rx: -Math.PI / 2, cast: false }, pawGroup);
+[[-0.13, 0.15], [-0.05, 0.2], [0.05, 0.2], [0.13, 0.15]].forEach(([x, z]) => mesh(new THREE.CircleGeometry(0.05, 20), pawMat, { x, z: -z, rx: -Math.PI / 2, cast: false }, pawGroup));
+
+/* ================= kibble (visual) ================= */
+// เม็ดอาหาร: ทรงกลมแบนขอบมน (ตรงกับ collider roundCylinder)
+const kp = [];
+kp.push(new THREE.Vector2(0.001, -0.024));
+for (let i = 0; i <= 6; i++) { const a = -Math.PI / 2 + i / 6 * Math.PI / 2; kp.push(new THREE.Vector2(0.04 + 0.012 * Math.cos(a), -0.012 + 0.012 * Math.sin(a))); }
+for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI / 2; kp.push(new THREE.Vector2(0.04 + 0.012 * Math.cos(a), 0.012 + 0.012 * Math.sin(a))); }
+kp.push(new THREE.Vector2(0.02, 0.026)); kp.push(new THREE.Vector2(0.001, 0.027));
+const KS = 1.3; // ขนาดเม็ด
+const kibGeo = new THREE.LatheGeometry(kp, 16); kibGeo.scale(KS, KS, KS);
+const MAXK = 240;
+const kibBump = canvasTex(64, 64, (g, w, h) => {
+  g.fillStyle = '#808080'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.5)'; g.beginPath(); g.arc(rand(0, w), rand(0, h), rand(0.5, 2), 0, 7); g.fill(); }
+}, [3, 1]);
+kibBump.colorSpace = THREE.NoColorSpace;
+const kibMesh = new THREE.InstancedMesh(kibGeo, new THREE.MeshPhysicalMaterial({ roughness: 0.55, bumpMap: kibBump, bumpScale: 2, clearcoat: 0.35, clearcoatRoughness: 0.45, side: THREE.DoubleSide }), MAXK);
+kibMesh.castShadow = kibMesh.receiveShadow = true; kibMesh.frustumCulled = false; kibMesh.count = 0;
+scene.add(kibMesh);
+// ปลาทอง (โบนัส)
+const fs = new THREE.Shape();
+fs.moveTo(-0.06, 0); fs.quadraticCurveTo(-0.02, 0.04, 0.035, 0.012); fs.lineTo(0.07, 0.035); fs.lineTo(0.06, 0);
+fs.lineTo(0.07, -0.035); fs.lineTo(0.035, -0.012); fs.quadraticCurveTo(-0.02, -0.04, -0.06, 0);
+const fishGeo = new THREE.ExtrudeGeometry(fs, { depth: 0.022, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 3, curveSegments: 10 });
+fishGeo.center(); fishGeo.rotateX(-Math.PI / 2); fishGeo.scale(KS, KS, KS);
+const fishMesh = new THREE.InstancedMesh(fishGeo, new THREE.MeshPhysicalMaterial({ color: 0xffc23d, roughness: 0.3, metalness: 0.35, clearcoat: 1, emissive: 0x6b3a00, emissiveIntensity: 0.25 }), 60);
+fishMesh.castShadow = true; fishMesh.frustumCulled = false; fishMesh.count = 0;
+scene.add(fishMesh);
+
+/* ================= พัดลม (ด่านที่มีลม) ================= */
+function makeFan(side) {
+  const f = new THREE.Group(); scene.add(f);
+  const fm = std(0xffffff, { roughness: 0.4 }), am = std(0x7fd3ff, { roughness: 0.3 });
+  mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.06, 32), fm, { y: 0.03 }, f);
+  mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.75, 12), fm, { y: 0.4 }, f);
+  const hd = new THREE.Group(); hd.position.y = 0.85; hd.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; f.add(hd);
+  mesh(new THREE.SphereGeometry(0.1, 20, 16), fm, { z: -0.08, sz: 1.3 }, hd);
+  const blades = new THREE.Group(); hd.add(blades);
+  for (let i = 0; i < 3; i++) { const g = new THREE.Group(); g.rotation.z = i * Math.PI * 2 / 3; blades.add(g); mesh(new THREE.SphereGeometry(0.15, 16, 12), am, { y: 0.15, sx: 0.55, sz: 0.12 }, g); }
+  mesh(new THREE.TorusGeometry(0.33, 0.012, 8, 48), fm, { z: 0.04 }, hd);
+  mesh(new THREE.TorusGeometry(0.33, 0.012, 8, 48), fm, { z: -0.06 }, hd);
+  for (let i = 0; i < 8; i++) mesh(new THREE.BoxGeometry(0.008, 0.66, 0.008), fm, { z: 0.045, rz: i * Math.PI / 8 }, hd);
+  f.position.set(BOWL0.x + side * 2.3, 0, BOWL0.z + 0.4); f.visible = false;
+  return { f, blades, side };
+}
+const fans = [makeFan(1), makeFan(-1)];
+
+/* ================= scoop + aim ================= */
+const scoop = new THREE.Group(); scene.add(scoop);
+const scoopTilt = new THREE.Group(); scoop.add(scoopTilt);
+const scoopMat = new THREE.MeshPhysicalMaterial({ color: 0xff7eab, roughness: 0.35, clearcoat: 0.8, side: THREE.DoubleSide });
+mesh(new THREE.SphereGeometry(0.22, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), scoopMat, {}, scoopTilt);
+mesh(new THREE.TorusGeometry(0.22, 0.015, 8, 40), scoopMat, { rx: Math.PI / 2 }, scoopTilt);
+mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.5, 12), scoopMat, { x: -0.44, y: 0.03, rz: Math.PI / 2 + 0.15 }, scoopTilt);
+const scoopKib = new THREE.Group(); scoopTilt.add(scoopKib);
+for (let i = 0; i < 12; i++) {
+  const a = rand(0, Math.PI * 2), r = rand(0, 0.13);
+  mesh(kibGeo, std(0x9a5a2a, { roughness: 0.75 }), { x: Math.cos(a) * r, y: rand(-0.06, -0.02), z: Math.sin(a) * r, rx: rand(-0.4, 0.4), rz: rand(-0.4, 0.4), cast: false }, scoopKib);
+}
+const aimRing = mesh(new THREE.RingGeometry(0.09, 0.13, 40), new THREE.MeshBasicMaterial({ color: 0xff6f98, transparent: true, opacity: 0.8 }), { rx: -Math.PI / 2, cast: false, receive: false });
+const aimLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+const aimLine = new THREE.Line(aimLineGeo, new THREE.LineDashedMaterial({ color: 0xff6f98, dashSize: 0.08, gapSize: 0.06, transparent: true, opacity: 0.7 }));
+scene.add(aimLine);
+scoop.visible = aimRing.visible = aimLine.visible = false;
+
+/* ================= มะขาม ================= */
+const furBump = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#808080'; g.fillRect(0, 0, w, h); g.lineWidth = 1;
+  for (let i = 0; i < 9000; i++) {
+    const x = rand(0, w), y = rand(0, h), l = rand(3, 8);
+    g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.35)';
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + rand(-1.5, 1.5), y + l); g.stroke();
+  }
+}, [4, 2]);
+furBump.colorSpace = THREE.NoColorSpace;
+const furProps = { roughness: 0.85, sheen: 1, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xfff3e6), bumpMap: furBump, bumpScale: 2.5 };
+const furMat = new THREE.MeshPhysicalMaterial({ map: furTex, ...furProps });
+const headMat = new THREE.MeshPhysicalMaterial({ map: headTex, ...furProps });
+const legMat = new THREE.MeshPhysicalMaterial({ map: legTex, ...furProps });
+const orangeMat = new THREE.MeshPhysicalMaterial({ color: 0xdc8f4a, ...furProps });
+const greyMat = new THREE.MeshPhysicalMaterial({ color: 0x8a7c6c, ...furProps });
+const darkFurMat = new THREE.MeshPhysicalMaterial({ color: 0x3f342c, ...furProps });
+const creamMat = new THREE.MeshPhysicalMaterial({ color: 0xf8f4ee, ...furProps, sheenColor: new THREE.Color(0xffffff) });
+const pinkMat = std(0xf2a3ad, { roughness: 0.6 });
+const irisMat = new THREE.MeshPhysicalMaterial({ color: 0xcdb648, roughness: 0.15, clearcoat: 1 });
+const pupilMat = new THREE.MeshPhysicalMaterial({ color: 0x1a1214, roughness: 0.1, clearcoat: 1 });
+const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const darkMat = std(0x5a3530);
+
+const cat = new THREE.Group(); cat.position.copy(waitSpot()); cat.rotation.y = -0.3; scene.add(cat);
+const rig = new THREE.Group(); cat.add(rig);
+const bodyGeo = new THREE.SphereGeometry(0.5, 48, 32); bodyGeo.rotateX(Math.PI / 2);
+const body = mesh(bodyGeo, furMat, { y: 0.62, sx: 0.78, sy: 0.72, sz: 1.25 }, rig);
+mesh(new THREE.SphereGeometry(0.3, 32, 24), creamMat, { y: 0.66, z: 0.42, sx: 0.95, sy: 1.05, sz: 0.75 }, rig);
+[-1, 1].forEach(s => mesh(new THREE.SphereGeometry(0.24, 32, 24), s > 0 ? orangeMat : greyMat, { x: s * 0.22, y: 0.55, z: -0.38, sx: 0.8, sz: 1.1 }, rig));
+const legs = [];
+[[0.2, 0.5, 0.4], [-0.2, 0.5, 0.4], [0.2, 0.5, -0.4], [-0.2, 0.5, -0.4]].forEach(([x, y, z]) => {
+  const pivot = new THREE.Group(); pivot.position.set(x, y, z); rig.add(pivot);
+  mesh(new THREE.CapsuleGeometry(0.095, 0.32, 6, 16), legMat, { y: -0.24 }, pivot);
+  mesh(new THREE.SphereGeometry(0.11, 20, 16), creamMat, { y: -0.44, z: 0.04, sy: 0.65, sz: 1.25 }, pivot);
+  legs.push(pivot);
+});
+const neck = new THREE.Group(); neck.position.set(0, 0.95, 0.5); rig.add(neck);
+const head = new THREE.Group(); head.position.set(0, 0.08, 0.12); head.scale.setScalar(1.08); neck.add(head);
+mesh(new THREE.SphereGeometry(0.36, 48, 32), headMat, { sx: 1.08, sy: 0.95, sz: 0.95 }, head);
+[-1, 1].forEach(s => mesh(new THREE.SphereGeometry(0.2, 32, 24), s < 0 ? orangeMat : greyMat, { x: s * 0.17, y: -0.1, z: 0.12, sx: 1.1, sy: 0.85, sz: 0.9 }, head));
+[-1, 1].forEach(s => mesh(new THREE.SphereGeometry(0.1, 24, 16), creamMat, { x: s * 0.075, y: -0.1, z: 0.3, sy: 0.85, sz: 0.8 }, head));
+mesh(new THREE.SphereGeometry(0.08, 20, 16), creamMat, { y: -0.19, z: 0.26, sy: 0.7 }, head);
+mesh(new THREE.SphereGeometry(0.032, 16, 12), pinkMat, { y: -0.045, z: 0.352, sx: 1.3, sy: 0.8, sz: 0.8 }, head);
+mesh(new THREE.SphereGeometry(0.012, 10, 8), darkMat, { x: 0.03, y: -0.045, z: 0.378, cast: false }, head);
+[-1, 1].forEach(s => mesh(new THREE.TorusGeometry(0.03, 0.007, 6, 16, Math.PI), darkMat, { x: s * 0.03, y: -0.105, z: 0.372, rz: Math.PI, cast: false }, head));
+const irisTex = canvasTex(128, 128, (g, w, h) => {
+  const gr = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+  gr.addColorStop(0, '#f6e98a'); gr.addColorStop(0.5, '#ddc548'); gr.addColorStop(0.82, '#a99a2c'); gr.addColorStop(1, '#4f4712');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.lineWidth = 1;
+  for (let i = 0; i < 110; i++) {
+    const a = rand(0, Math.PI * 2);
+    g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,250,200,.35)' : 'rgba(110,90,20,.35)';
+    g.beginPath(); g.moveTo(64 + Math.cos(a) * 12, 64 + Math.sin(a) * 12); g.lineTo(64 + Math.cos(a) * 60, 64 + Math.sin(a) * 60); g.stroke();
+  }
+});
+const corneaMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.14, roughness: 0, clearcoat: 1, clearcoatRoughness: 0, envMapIntensity: 2.5, depthWrite: false });
+const eyes = [];
+[-1, 1].forEach(s => {
+  const eg = new THREE.Group(); eg.position.set(s * 0.145, 0.03, 0.283); eg.rotation.y = s * 0.22; head.add(eg);
+  const ei = new THREE.Group(); ei.scale.setScalar(1.22); eg.add(ei);   // ตาโตขึ้น = น่ารักขึ้น
+  mesh(new THREE.SphereGeometry(0.075, 32, 24), std(0x3a3416, { roughness: 0.4 }), { sz: 0.6, cast: false }, ei);
+  mesh(new THREE.CircleGeometry(0.07, 40), new THREE.MeshStandardMaterial({ map: irisTex, roughness: 0.35 }), { z: 0.046, cast: false }, ei);
+  mesh(new THREE.CircleGeometry(0.03, 32), new THREE.MeshBasicMaterial({ color: 0x0d0a0a }), { z: 0.047, sx: 0.78, sy: 1.18, cast: false }, ei); // รูม่านตากลมโต
+  mesh(new THREE.SphereGeometry(0.077, 32, 24), corneaMat, { sz: 0.7, cast: false, receive: false }, ei);
+  mesh(new THREE.SphereGeometry(0.017, 12, 8), shineMat, { x: 0.022, y: 0.027, z: 0.052, cast: false }, ei);
+  mesh(new THREE.SphereGeometry(0.008, 10, 8), shineMat, { x: -0.02, y: -0.022, z: 0.051, cast: false }, ei);
+  eyes.push(eg);
+});
+const blushMat = new THREE.MeshBasicMaterial({ color: 0xff7f9f, transparent: true, opacity: 0.45, depthWrite: false });
+[-1, 1].forEach(s => mesh(new THREE.CircleGeometry(0.05, 24), blushMat, { x: s * 0.2, y: -0.08, z: 0.302, ry: s * 0.45, sy: 0.62, cast: false, receive: false }, head));
+const ears = [];
+[-1, 1].forEach(s => {
+  const ear = new THREE.Group(); ear.position.set(s * 0.2, 0.25, -0.02); ear.rotation.set(-0.15, 0, -s * 0.35); head.add(ear);
+  mesh(new THREE.ConeGeometry(0.13, 0.28, 24), s < 0 ? orangeMat : greyMat, { y: 0.1, sz: 0.55 }, ear);
+  mesh(new THREE.ConeGeometry(0.085, 0.2, 24), pinkMat, { y: 0.08, z: 0.035, sz: 0.4 }, ear);
+  ears.push(ear);
+});
+const whiskerMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+[-1, 1].forEach(s => [-0.03, 0, 0.03].forEach(dy => {
+  const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(s * 0.13, -0.1 + dy, 0.33), new THREE.Vector3(s * 0.5, -0.06 + dy * 2.2, 0.26)]);
+  head.add(new THREE.Line(g, whiskerMat));
+}));
+const tailRoot = new THREE.Group(); tailRoot.position.set(0, 0.72, -0.6); tailRoot.rotation.x = -1.2; rig.add(tailRoot);
+const tailSegs = [];
+let tp = tailRoot;
+for (let i = 0; i < 10; i++) {
+  const g = new THREE.Group(); g.position.y = i === 0 ? 0 : 0.11; tp.add(g);
+  mesh(new THREE.SphereGeometry(0.085 - i * 0.0035, 16, 12), i < 2 ? orangeMat : (i === 9 || i % 2) ? darkFurMat : greyMat, { sy: 1.4 }, g);
+  tailSegs.push(g); tp = g;
+}
+// ---- ของแต่งตัว ----
+const collar = new THREE.Group(); collar.position.set(0, 0.8, 0.56); collar.rotation.x = 0.9; rig.add(collar);
+mesh(new THREE.TorusGeometry(0.27, 0.035, 12, 48), std(0xe53950, { roughness: 0.5 }), { rx: Math.PI / 2 }, collar);
+const bell = mesh(new THREE.SphereGeometry(0.065, 20, 16), new THREE.MeshPhysicalMaterial({ color: 0xffcc33, metalness: 0.9, roughness: 0.2, clearcoat: 1 }), { y: -0.05, z: 0.29 }, collar);
+mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 16), std(0x6b4a10), { y: -0.05, z: 0.355, cast: false }, collar);
+const bow = new THREE.Group(); bow.position.set(0.02, 0.05, 0.05); ears[1].add(bow);
+const bowMat = std(0xff5c9a, { roughness: 0.45 });
+[-1, 1].forEach(s => mesh(new THREE.SphereGeometry(0.06, 16, 12), bowMat, { x: s * 0.06, sx: 1.2, sy: 0.75, sz: 0.45, rz: s * 0.3 }, bow));
+mesh(new THREE.SphereGeometry(0.03, 12, 10), bowMat, {}, bow);
+const crown = new THREE.Group(); crown.position.set(-0.03, 0.31, -0.03); crown.rotation.z = 0.18; crown.scale.setScalar(1.35); head.add(crown);
+const goldM = new THREE.MeshPhysicalMaterial({ color: 0xffd34d, metalness: 0.85, roughness: 0.22, clearcoat: 1, side: THREE.DoubleSide });
+mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.07, 24, 1, true), goldM, {}, crown);
+for (let i = 0; i < 5; i++) {
+  const a = i / 5 * Math.PI * 2;
+  mesh(new THREE.ConeGeometry(0.03, 0.07, 8), goldM, { x: Math.sin(a) * 0.115, y: 0.065, z: Math.cos(a) * 0.115 }, crown);
+  mesh(new THREE.SphereGeometry(0.016, 8, 6), std(i % 2 ? 0xff4f86 : 0x58c7ff, { roughness: 0.2 }), { x: Math.sin(a) * 0.122, z: Math.cos(a) * 0.122, cast: false }, crown);
+}
+function applyCosmetics() {
+  collar.visible = !!save.wear.collar; bow.visible = !!save.wear.bow; crown.visible = !!save.wear.crown;
+  const g = !!save.wear.gold;
+  bowlMat.color.set(g ? 0xffc93c : 0x3fc1f0); bowlMat.metalness = g ? 0.65 : 0; bowlMat.roughness = g ? 0.22 : 0.2;
+}
+applyCosmetics();
+
+const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.5, 1.9), new THREE.MeshBasicMaterial({ visible: false }));
+hitbox.position.y = 0.7; cat.add(hitbox);
+
+/* ================= physics (Rapier) ================= */
+await RAPIER.init();
+const world = new RAPIER.World({ x: 0, y: -35, z: 0 });   // แรงโน้มถ่วงตามสเกลฉาก (มะขามสูง ~1.4 หน่วย ≈ 28 ซม.)
+world.timestep = 1 / 120;
+world.numSolverIterations = 8;
+const ground = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+world.createCollider(RAPIER.ColliderDesc.cuboid(20, 0.5, 20).setTranslation(3, -0.5, 3).setFriction(0.8).setRestitution(0.25), ground);
+[[0, 2, -4.5, 20, 4, 0.5], [-5.5, 2, 0, 0.5, 4, 20], [5.6, 2, 0, 0.5, 4, 20], [0, 2, 4.6, 20, 4, 0.5]]
+  .forEach(([x, y, z, hx, hy, hz]) => world.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z), ground));
+
+const bowlBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(BOWL0.x, BOWL0.y, BOWL0.z));
+// ชามฟิสิกส์: ก้นทรงกระบอกตัน + ผนังแผ่นหนา 24 ชิ้นเอียงตามขอบ (ตัน → เม็ดทะลุไม่ได้แม้ชามเลื่อน/เอียง)
+const bowlCols = [];
+function buildBowl(sc = 1) {
+  const rt = tier('rim');
+  Object.assign(BOWL, { s: sc, r0: 0.42 * sc, y0: 0.05 * sc, r1: (0.62 + 0.04 * rt) * sc, y1: (0.30 + 0.06 * rt) * sc, t: 0.06 * sc });
+  if (bowlVis) { bowl.remove(bowlVis); bowlVis.geometry.dispose(); }
+  bowlVis = mesh(bowlGeometry(), bowlMat, {}, bowl);
+  pawGroup.scale.setScalar(sc); pawGroup.position.y = BOWL.y0 + 0.002;
+  bowlCols.forEach(c => world.removeCollider(c, false)); bowlCols.length = 0;
+  const rest = 0.3 - 0.08 * tier('mat');
+  bowlCols.push(world.createCollider(RAPIER.ColliderDesc.cylinder(BOWL.y0 / 2, BOWL.r0 + 0.03 * sc).setTranslation(0, BOWL.y0 / 2, 0).setFriction(0.85).setRestitution(rest), bowlBody));
+  const N = 24, dr = BOWL.r1 - BOWL.r0, dy = BOWL.y1 - BOWL.y0, L = Math.hypot(dr, dy);
+  const d = { r: dr / L, y: dy / L }, n = { r: dy / L, y: -dr / L };
+  const midR = (BOWL.r0 + BOWL.r1) / 2 + n.r * BOWL.t / 2, midY = (BOWL.y0 + BOWL.y1) / 2 + n.y * BOWL.t / 2;
+  const halfW = Math.PI * 2 * midR / N / 2 + 0.012 * sc;
+  const X = new THREE.Vector3(), Y = new THREE.Vector3(), Z = new THREE.Vector3(), M = new THREE.Matrix4(), Q = new THREE.Quaternion();
+  for (let i = 0; i < N; i++) {
+    const a = i / N * Math.PI * 2, ex = Math.sin(a), ez = Math.cos(a);
+    X.set(Math.cos(a), 0, -Math.sin(a)); Y.set(ex * d.r, d.y, ez * d.r); Z.set(ex * n.r, n.y, ez * n.r);
+    Q.setFromRotationMatrix(M.makeBasis(X, Y, Z));
+    bowlCols.push(world.createCollider(RAPIER.ColliderDesc.cuboid(halfW, L / 2 + 0.03 * sc, BOWL.t / 2)
+      .setTranslation(ex * midR, midY, ez * midR).setRotation({ x: Q.x, y: Q.y, z: Q.z, w: Q.w })
+      .setFriction(0.75).setRestitution(rest), bowlBody));
+  }
+}
+buildBowl(1);
+
+const catBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(cat.position.x, 0, cat.position.z));
+world.createCollider(RAPIER.ColliderDesc.ball(0.34).setTranslation(0, 0.62, 0.28).setRestitution(0.4), catBody);
+world.createCollider(RAPIER.ColliderDesc.ball(0.34).setTranslation(0, 0.62, -0.28).setRestitution(0.4), catBody);
+const headBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(cat.position.x, 1, cat.position.z));
+const headCol = world.createCollider(RAPIER.ColliderDesc.ball(0.3).setRestitution(0.5), headBody);
+
+let kibs = [];
+const qTmp = new THREE.Quaternion(), eTmp = new THREE.Euler();
+const scoopSpread = () => 1 - 0.28 * tier('scoop');
+function spawnKibble(p, fish) {
+  if (kibs.length >= MAXK || (fish && kibs.filter(k => k.fish).length >= 60)) return false;
+  qTmp.setFromEuler(eTmp.set(rand(0, 6.3), rand(0, 6.3), rand(0, 6.3)));
+  const desc = RAPIER.RigidBodyDesc.dynamic()
+    .setTranslation(p.x, p.y, p.z)
+    .setRotation({ x: qTmp.x, y: qTmp.y, z: qTmp.z, w: qTmp.w })
+    .setLinvel(rand(-0.3, 0.3) * scoopSpread(), rand(-1.5, -0.5), rand(-0.3, 0.3) * scoopSpread())
+    .setAngvel({ x: rand(-12, 12), y: rand(-12, 12), z: rand(-12, 12) })
+    .setLinearDamping(0.05).setAngularDamping(0.5).setCcdEnabled(true);
+  const b = world.createRigidBody(desc);
+  const cd = fish ? RAPIER.ColliderDesc.roundCuboid(0.062 * KS, 0.013 * KS, 0.03 * KS, 0.01 * KS) : RAPIER.ColliderDesc.roundCylinder(0.012 * KS, 0.04 * KS, 0.012 * KS);
+  world.createCollider(cd.setDensity(1.3).setFriction(0.7).setRestitution(0.3 - 0.06 * tier('mat')), b);
+  kibs.push({
+    body: b, fish, last: 2, hitCat: false,
+    color: new THREE.Color().setHSL(0.068 + rand(-0.012, 0.012), 0.62 + rand(-0.1, 0.1), 0.2 + rand(-0.05, 0.06)),
+    scale: rand(0.93, 1.07)
+  });
+  return true;
+}
+function removeKib(k) { world.removeRigidBody(k.body); kibs.splice(kibs.indexOf(k), 1); }
+function clearKibs() { kibs.forEach(k => world.removeRigidBody(k.body)); kibs = []; }
+
+function bowlPos() { const t = bowlBody.translation(); return t; }
+const qb = new THREE.Quaternion(), vb = new THREE.Vector3();
+function kibInBowl(k) {
+  const t = k.body.translation(), bp = bowlBody.translation(), br = bowlBody.rotation();
+  vb.set(t.x - bp.x, t.y - bp.y, t.z - bp.z).applyQuaternion(qb.set(br.x, br.y, br.z, br.w).invert());
+  if (vb.y < BOWL.y0 + 0.015 || vb.y > 0.7) return false;          // ต่ำกว่าก้นชาม = อยู่บนพื้น
+  return Math.hypot(vb.x, vb.z) < innerR(vb.y) + 0.01;            // อยู่ด้านในผนังที่ความสูงนั้น
+}
+// ลม + แม่เหล็ก: มีผลเฉพาะเม็ดที่ลอยอยู่กลางอากาศ
+function windNow(L) { return L.wind ? (L.windAlt ? L.wind * Math.sin(G.bowlT / L.windAlt * Math.PI * 2) : L.wind) : 0; }
+function applyForces(ts, L) {
+  const w = windNow(L), mg = tier('magnet') * 7;
+  if (!w && !mg) return;
+  const bp = bowlBody.translation();
+  for (const k of kibs) {
+    const t = k.body.translation();
+    if (t.y < BOWL.y1 + 0.06) continue;
+    const v = k.body.linvel(); let vx = v.x + w * ts, vz = v.z;
+    if (mg) {
+      const dx = bp.x - t.x, dz = bp.z - t.z, dd = Math.hypot(dx, dz);
+      if (dd > BOWL.r1 * 0.5 && dd < BOWL.r1 + 0.45) { vx += dx / dd * mg * ts; vz += dz / dd * mg * ts; }
+    }
+    k.body.setLinvel({ x: vx, y: v.y, z: vz }, true);
+  }
+}
+function bowlState() {
+  const bp = bowlPos(); let inBowl = 0, spill = 0, fish = 0;
+  for (const k of kibs) {
+    if (kibInBowl(k, bp)) { inBowl++; if (k.fish) fish++; }
+    else if (k.body.translation().y < 0.15) spill++;               // ตกพื้นแล้ว
+  }
+  return { inBowl, spill, fish };
+}
+
+/* ================= sound ================= */
+let actx = null, soundOn = true, noiseBuf = null, lastClick = 0;
+function ac() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function noiseHit(t, freq, q, vol, dur) {
+  const a = actx, src = a.createBufferSource(); src.buffer = noiseBuf;
+  const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+  const g = a.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(f).connect(g).connect(a.destination); src.start(t, rand(0, 0.9), dur + 0.02);
+}
+function clickSound(kind, strength) {
+  if (!soundOn || !actx) return;
+  const now = actx.currentTime;
+  if (now - lastClick < 0.022) return; lastClick = now;
+  const v = clamp(strength / 10, 0.04, 0.45);
+  if (kind === 'bowl') {   // เสียงกระทบชามเซรามิก
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = rand(2600, 3800); o.type = 'sine';
+    g.gain.setValueAtTime(v * 0.25, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    o.connect(g).connect(actx.destination); o.start(now); o.stop(now + 0.1);
+    noiseHit(now, rand(3500, 5000), 8, v, 0.03);
+  } else if (kind === 'kib') noiseHit(now, rand(2200, 3200), 5, v * 0.8, 0.025);
+  else noiseHit(now, rand(1200, 1800), 3, v * 0.9, 0.035);
+}
+function crunch() {
+  if (!soundOn || !actx) return;
+  const t = actx.currentTime;
+  for (let i = 0; i < 3; i++) noiseHit(t + i * 0.045 + rand(0, 0.02), rand(1100, 2200), 1.2, 0.35, 0.045);
+}
+function meow(pitch = 1) {
+  if (!soundOn) return;
+  const a = ac(), t = a.currentTime;
+  const o = a.createOscillator(); o.type = 'sawtooth';
+  const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 3;
+  const g = a.createGain();
+  const base = 520 * pitch * rand(0.92, 1.08);
+  o.frequency.setValueAtTime(base, t); o.frequency.linearRampToValueAtTime(base * 1.5, t + 0.15); o.frequency.linearRampToValueAtTime(base * 0.85, t + 0.5);
+  f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(2200, t + 0.16); f.frequency.linearRampToValueAtTime(800, t + 0.5);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25, t + 0.05); g.gain.setValueAtTime(0.25, t + 0.3); g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+  o.connect(f).connect(g).connect(a.destination); o.start(t); o.stop(t + 0.6);
+}
+function purr(dur = 2) {
+  if (!soundOn) return;
+  const a = ac(), t = a.currentTime;
+  const src = a.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+  const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+  const g = a.createGain(); g.gain.value = 0;
+  const lfo = a.createOscillator(); lfo.frequency.value = 24;
+  const lg = a.createGain(); lg.gain.value = 0.5; lfo.connect(lg).connect(g.gain);
+  const env = a.createGain();
+  env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(2.5, t + 0.2); env.gain.setValueAtTime(2.5, t + dur - 0.4); env.gain.linearRampToValueAtTime(0, t + dur);
+  src.connect(lp).connect(g).connect(env).connect(a.destination);
+  src.start(t); src.stop(t + dur); lfo.start(t); lfo.stop(t + dur);
+}
+$('sound').onclick = () => { soundOn = !soundOn; $('sound').textContent = soundOn ? '🔊' : '🔇'; };
+
+/* ================= UI helpers ================= */
+const bubble = $('bubble'), tmp = new THREE.Vector3();
+function headScreen() {
+  head.getWorldPosition(tmp); tmp.y += 0.5; tmp.project(camera);
+  return { x: (tmp.x + 1) / 2 * innerWidth, y: (1 - tmp.y) / 2 * innerHeight };
+}
+function say(text, ms = 1800) {
+  bubble.textContent = text; bubble.classList.add('show');
+  clearTimeout(say.t); say.t = setTimeout(() => bubble.classList.remove('show'), ms);
+}
+function burst(emoji, n = 5) {
+  const p = headScreen();
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'float'; el.textContent = emoji;
+    el.style.left = (p.x + rand(-40, 40)) + 'px'; el.style.top = (p.y + rand(-10, 20)) + 'px';
+    el.style.setProperty('--dx', rand(-30, 30) + 'px'); el.style.animationDelay = (i * 0.12) + 's';
+    document.body.appendChild(el); setTimeout(() => el.remove(), 2400);
+  }
+}
+function banner(title, sub, ms = 1800) {
+  $('bTitle').textContent = title; $('bSub').textContent = sub;
+  $('banner').classList.add('show');
+  clearTimeout(banner.t); banner.t = setTimeout(() => $('banner').classList.remove('show'), ms);
+}
+
+/* ================= cat animation state ================= */
+const S = {
+  swipeT: 0, rear: false, rearA: 0, zoom: false,
+  target: null, stop: 0.06, onArrive: null, face: null, speed: 0, phase: 0,
+  jump: -1, eat: 0, eating: false, petting: false,
+  blinkT: 0, nextBlink: 2, earT: 0, earIdx: 0, nextEar: 3, flatEars: 0
+};
+function walkTo(x, z, cb, stop = 0.06) {
+  S.target = new THREE.Vector3(clamp(x, -4.3, 4.3), 0, clamp(z, -3.3, 3.4));
+  S.stop = stop; S.onArrive = cb || null; S.face = null;
+}
+
+function updateCat(dt, t) {
+  let moving = false;
+  if (S.target) {
+    const dx = S.target.x - cat.position.x, dz = S.target.z - cat.position.z, d = Math.hypot(dx, dz);
+    if (d > S.stop) {
+      cat.rotation.y = lerpAngle(cat.rotation.y, Math.atan2(dx, dz), 1 - Math.exp(-7 * dt));
+      S.speed = damp(S.speed, Math.min(1.7, d * 2.5 + 0.3) * (S.zoom ? 2.3 : 1), 6, dt);
+      cat.position.x += dx / d * S.speed * dt;
+      cat.position.z += dz / d * S.speed * dt;
+      moving = true;
+    } else {
+      S.target = null;
+      const cb = S.onArrive; S.onArrive = null; if (cb) cb();
+    }
+  }
+  if (!moving) S.speed = damp(S.speed, 0, 10, dt);
+  if (S.face && !moving) cat.rotation.y = lerpAngle(cat.rotation.y, Math.atan2(S.face.x - cat.position.x, S.face.z - cat.position.z), 1 - Math.exp(-6 * dt));
+
+  const amt = clamp(S.speed / 1.2, 0, 1);
+  S.phase += dt * (4 + S.speed * 7);
+  S.eat = damp(S.eat, S.eating ? 1 : 0, 6, dt);
+  const e = S.eat;
+
+  const sw = Math.sin(S.phase) * 0.55 * amt;
+  legs[0].rotation.x = sw; legs[3].rotation.x = sw;
+  S.rearA = damp(S.rearA, S.rear ? 1 : 0, 6, dt);
+  legs[0].rotation.z = 0;
+  if (S.swipeT > 0) {            // ตะปบ/ข่วน ด้วยขาหน้าขวา
+    S.swipeT -= dt;
+    const k = Math.sin(clamp(1 - S.swipeT / 0.32, 0, 1) * Math.PI);
+    legs[0].rotation.x = -1.8 * k - 0.6 * S.rearA; legs[0].rotation.z = 0.3 * k;
+  } else if (S.rearA > 0.05) legs[0].rotation.x = -0.9 * S.rearA;
+  if (S.rearA > 0.05) legs[1].rotation.x = -0.9 * S.rearA;
+  legs[1].rotation.x = -sw; legs[2].rotation.x = -sw;
+
+  let jy = 0;
+  if (S.jump >= 0) {
+    S.jump += dt / 0.55;
+    if (S.jump >= 1) S.jump = -1;
+    else {
+      const k = Math.sin(S.jump * Math.PI);
+      jy = k * 0.55;
+      legs.forEach((l, i) => l.rotation.x += (i < 2 ? -0.6 : 0.6) * k);
+      rig.rotation.x = -0.15 * Math.cos(S.jump * Math.PI);
+    }
+  }
+  if (S.jump < 0) rig.rotation.x = damp(rig.rotation.x, 0.12 * e - 0.5 * S.rearA, 8, dt);
+  rig.position.y = Math.abs(Math.sin(S.phase)) * 0.045 * amt + jy + 0.2 * S.rearA;
+  rig.position.x = S.petting ? Math.sin(t * 90) * 0.004 : 0;
+  const br = 1 + Math.sin(t * 2.6) * 0.012;
+  body.scale.set(0.78, 0.72 * br, 1.25);
+
+  let yaw = 0, pitch = 0;
+  if (!S.eating && amt < 0.3) {
+    // มองที่ตัก (ถ้ามี) ไม่งั้นมองกล้อง
+    const look = scoop.visible ? scoop.position.clone() : camera.position.clone();
+    const p = cat.worldToLocal(look);
+    yaw = clamp(Math.atan2(p.x, p.z), -0.9, 0.9);
+    pitch = clamp(-Math.atan2(p.y - 1, Math.hypot(p.x, p.z)) * 0.6, -0.5, 0.25);
+  }
+  neck.rotation.x = damp(neck.rotation.x, pitch * (1 - e) + (0.75 + Math.sin(t * 14) * 0.12) * e, 8, dt);
+  neck.rotation.y = damp(neck.rotation.y, yaw, 5, dt);
+  neck.position.y = damp(neck.position.y, 0.95 - 0.32 * e, 8, dt);
+  head.rotation.z = damp(head.rotation.z, S.petting ? Math.sin(t * 3) * 0.22 : 0, 6, dt);
+
+  S.nextBlink -= dt;
+  if (S.nextBlink < 0) { S.blinkT = 0.15; S.nextBlink = rand(2, 5); }
+  let open = 1;
+  if (S.blinkT > 0) { S.blinkT -= dt; open = 0.1; }
+  if (S.petting) open = 0.22;
+  if (S.flatEars > 0) open = 0.15;
+  eyes.forEach(eg => eg.scale.y = damp(eg.scale.y, open, 25, dt));
+
+  S.nextEar -= dt;
+  if (S.nextEar < 0) { S.earT = 0.35; S.earIdx = Math.random() < 0.5 ? 0 : 1; S.nextEar = rand(2.5, 6); }
+  if (S.earT > 0) S.earT -= dt;
+  if (S.flatEars > 0) S.flatEars -= dt;
+  ears.forEach((ear, i) => {
+    const tw = (S.earT > 0 && i === S.earIdx) ? Math.sin(S.earT * 40) * 0.35 : 0;
+    ear.rotation.x = damp(ear.rotation.x, -0.15 + tw - (S.flatEars > 0 ? 0.9 : 0), 20, dt);
+  });
+
+  const excite = G.state === 'pour' ? clamp(G.live.inBowl / LEVELS[G.level].target, 0, 1) : 0;
+  const wagSpeed = S.petting ? 7 : amt > 0.3 ? 5 : 2.2 + excite * 4, wagAmp = S.petting ? 0.18 : 0.1 + excite * 0.06;
+  tailRoot.rotation.x = damp(tailRoot.rotation.x, -1.2 + 0.45 * Math.max(amt, excite), 4, dt);
+  tailSegs.forEach((s, i) => {
+    s.rotation.x = 0.13 - 0.06 * amt;
+    s.rotation.z = Math.sin(t * wagSpeed - i * 0.45) * wagAmp;
+  });
+}
+
+/* ================= sfx เพิ่มเติม ================= */
+function tone(f0, f1, dur, type = 'sine', vol = 0.2, delay = 0) {
+  if (!soundOn || !actx) return;
+  const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const squeak = () => { tone(2600, 3500, 0.07, 'sine', 0.14); tone(3200, 2500, 0.08, 'sine', 0.12, 0.09); };
+const boing = v => tone(200, 520, 0.16, 'sine', clamp(v / 12, 0.05, 0.25));
+const comboSfx = m => tone(520 + m * 110, 900 + m * 160, 0.12, 'triangle', 0.15);
+const chime = () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, f * 1.01, 0.4, 'triangle', 0.16, i * 0.08));
+function scratchSfx() {
+  if (!soundOn || !actx) return;
+  const t = actx.currentTime;
+  noiseHit(t, 3800, 1.4, 0.55, 0.16); noiseHit(t + 0.05, 2600, 1.2, 0.45, 0.16); noiseHit(t + 0.1, 3200, 1.3, 0.4, 0.14);
+}
+
+/* ================= popups / confetti / screen fx ================= */
+function screenOf(x, y, z) { tmp.set(x, y, z).project(camera); return { x: (tmp.x + 1) / 2 * innerWidth, y: (1 - tmp.y) / 2 * innerHeight }; }
+function popAt(x, y, z, text, color = '#ff6f98', size) {
+  const p = screenOf(x, y, z), el = document.createElement('div');
+  el.className = 'pop'; el.textContent = text; el.style.color = color; if (size) el.style.fontSize = size;
+  el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1200);
+}
+function confetti(n = 70) {
+  const cols = ['#ff6f98', '#ffd34d', '#6fd3ff', '#9be27a', '#c49bff', '#ff9a5c'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div'); el.className = 'confetti';
+    el.style.left = rand(0, 100) + 'vw'; el.style.background = cols[i % cols.length];
+    el.style.setProperty('--dx', rand(-80, 80) + 'px'); el.style.setProperty('--r', rand(-900, 900) + 'deg');
+    el.style.animationDuration = rand(1.8, 3.2) + 's'; el.style.animationDelay = rand(0, 0.5) + 's';
+    document.body.appendChild(el); setTimeout(() => el.remove(), 4000);
+  }
+}
+function showPerfect() {
+  const el = document.createElement('div'); el.className = 'perfect'; el.textContent = 'PERFECT! 💯';
+  document.body.appendChild(el); setTimeout(() => el.remove(), 2100);
+  confetti(); chime();
+}
+// รอยข่วนบนหน้าจอ (แตะเพื่อเช็ดออก)
+function addScratch() {
+  const el = document.createElement('div'); el.className = 'scratch';
+  let paths = '';
+  for (let i = 0; i < 3; i++) {
+    const x = 50 + i * 55, d = `M${x} 18 Q ${x + 30 + rand(-8, 8)} 115 ${x + 8} 212`;
+    paths += `<path d="${d}" stroke="rgba(255,255,255,.96)" stroke-width="${rand(10, 14)}"/><path d="${d}" stroke="rgba(150,70,95,.55)" stroke-width="3"/>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 230 230" width="230" height="230"><g fill="none" stroke-linecap="round">${paths}</g></svg>`;
+  el.style.left = rand(25, 75) + 'vw'; el.style.top = rand(30, 65) + 'vh'; el.style.setProperty('--rot', rand(-35, 35) + 'deg');
+  const wipe = () => { el.classList.add('fade'); setTimeout(() => el.remove(), 650); };
+  el.addEventListener('pointerdown', e => { e.stopPropagation(); wipe(); burst('✨', 1); });
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  setTimeout(wipe, 5000);
+}
+const clearScratches = () => document.querySelectorAll('.scratch').forEach(e => e.remove());
+
+/* ================= ของแปลกในถุง: ลูกบอลยาง / แคทนิป ================= */
+const items = [];
+const ballMat = new THREE.MeshPhysicalMaterial({ color: 0xff3b5c, roughness: 0.35, clearcoat: 0.8 });
+const nipMat = std(0x5cbf4a, { roughness: 0.7 });
+function spawnItem(type, p) {
+  const g = new THREE.Group(); scene.add(g);
+  if (type === 'ball') {
+    mesh(new THREE.SphereGeometry(0.075, 24, 16), ballMat, {}, g);
+    mesh(new THREE.TorusGeometry(0.075, 0.009, 6, 32), std(0xffffff, { roughness: 0.4 }), { rx: Math.PI / 2 }, g);
+  } else {
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; mesh(new THREE.SphereGeometry(0.05, 12, 8), nipMat, { x: Math.cos(a) * 0.045, z: Math.sin(a) * 0.045, sx: 1.25, sy: 0.28, sz: 0.6, ry: -a }, g); }
+    mesh(new THREE.SphereGeometry(0.025, 10, 8), std(0x3e8f33), { y: 0.012 }, g);
+  }
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(0.24), new THREE.MeshBasicMaterial({ visible: false })); g.add(hit);
+  const b = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(p.x, p.y, p.z)
+    .setLinvel(rand(-0.3, 0.3), -1, rand(-0.3, 0.3)).setAngvel({ x: rand(-8, 8), y: rand(-8, 8), z: rand(-8, 8) })
+    .setCcdEnabled(true).setLinearDamping(0.05).setAngularDamping(type === 'ball' ? 0.15 : 0.6));
+  world.createCollider(type === 'ball'
+    ? RAPIER.ColliderDesc.ball(0.075).setRestitution(0.88).setDensity(0.5).setFriction(0.5)
+    : RAPIER.ColliderDesc.roundCuboid(0.07, 0.008, 0.07, 0.008).setRestitution(0.05).setDensity(0.4).setFriction(0.95), b);
+  items.push({ type, body: b, g, hit, gone: false, last: 2 });
+}
+function removeItem(it) { const i = items.indexOf(it); if (i < 0) return; world.removeRigidBody(it.body); scene.remove(it.g); items.splice(i, 1); }
+function clearItems() { while (items.length) removeItem(items[0]); }
+function flickItem(it) {
+  if (it.gone) return; it.gone = true;
+  const t = it.body.translation(), bp = bowlBody.translation();
+  let dx = t.x - bp.x, dz = t.z - bp.z; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
+  it.body.setLinvel({ x: dx * 3, y: 8, z: dz * 3 }, true);
+  popAt(t.x, t.y + 0.3, t.z, 'เก็บแล้ว ✨', '#3fae5a'); tone(700, 1400, 0.12, 'triangle', 0.15);
+  G.bonus += 5;
+  setTimeout(() => removeItem(it), 900);
+}
+
+/* ================= หนูขโมยข้าว ================= */
+const mouse = new THREE.Group(); mouse.visible = false; mouse.scale.setScalar(1.45); scene.add(mouse);
+{
+  const mGrey = new THREE.MeshPhysicalMaterial({ color: 0x9d9aa8, roughness: 0.8, sheen: 1, sheenColor: new THREE.Color(0xffffff) });
+  const mPink = std(0xffb0c0, { roughness: 0.6 }), mEye = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  mesh(new THREE.SphereGeometry(0.12, 24, 16), mGrey, { y: 0.09, sx: 0.85, sy: 0.75, sz: 1.35 }, mouse);
+  mesh(new THREE.SphereGeometry(0.075, 20, 16), mGrey, { y: 0.12, z: 0.17, sz: 1.2 }, mouse);
+  [-1, 1].forEach(s => {
+    mesh(new THREE.SphereGeometry(0.048, 16, 12), mGrey, { x: s * 0.058, y: 0.195, z: 0.14, sz: 0.35 }, mouse);
+    mesh(new THREE.SphereGeometry(0.032, 12, 10), mPink, { x: s * 0.058, y: 0.195, z: 0.155, sz: 0.3, cast: false }, mouse);
+    mesh(new THREE.SphereGeometry(0.013, 8, 6), mEye, { x: s * 0.03, y: 0.145, z: 0.237, cast: false }, mouse);
+  });
+  mesh(new THREE.SphereGeometry(0.015, 8, 6), mPink, { y: 0.118, z: 0.262, cast: false }, mouse);
+  const tc = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.08, -0.15), new THREE.Vector3(0, 0.05, -0.3), new THREE.Vector3(0.08, 0.04, -0.42), new THREE.Vector3(0.02, 0.07, -0.53)]);
+  mesh(new THREE.TubeGeometry(tc, 20, 0.009, 6), mPink, {}, mouse);
+}
+const mouseKib = mesh(kibGeo, std(0x7a4a24, { roughness: 0.6 }), { y: 0.1, z: 0.275, cast: false }, mouse);
+const mouseHit = new THREE.Mesh(new THREE.SphereGeometry(0.38), new THREE.MeshBasicMaterial({ visible: false })); mouseHit.position.y = 0.12; mouse.add(mouseHit);
+const MZ = { state: 'off', t: 0, stolen: 0, dir: new THREE.Vector3(), exit: new THREE.Vector3() };
+function spawnMouse() {
+  const bp = bowlBody.translation(), side = Math.random() < 0.5 ? -1 : 1;
+  MZ.exit.set(clamp(bp.x + side * 3.6, -4.8, 4.8), 0, clamp(bp.z + rand(-0.4, 0.9), -3, 3.5));
+  MZ.dir.set(MZ.exit.x - bp.x, 0, MZ.exit.z - bp.z).normalize();
+  mouse.position.copy(MZ.exit); mouse.visible = true; mouseKib.visible = false;
+  MZ.state = 'in'; MZ.stolen = 0; MZ.t = 0;
+  squeak(); S.jump = 0; meow(1.4); say('หนู!! 🐭 ไล่มันทีย์!', 2000);
+}
+function chaseMouse() {
+  if (MZ.state !== 'in' && MZ.state !== 'steal') return;
+  MZ.state = 'flee'; squeak(); G.bonus += 10;
+  popAt(mouse.position.x, 0.6, mouse.position.z, 'ไปเลยย! +10🪙', '#ff8a3d');
+  say('ไล่ไปได้แล้ว เก่งมาก 😻', 1600);
+}
+function updateMouse(dt, t) {
+  if (MZ.state === 'off') return;
+  const bp = bowlBody.translation();
+  const tgt = (MZ.state === 'in' || MZ.state === 'steal')
+    ? tmp.set(bp.x + MZ.dir.x * (BOWL.r1 + 0.2), 0, bp.z + MZ.dir.z * (BOWL.r1 + 0.2)) : tmp.copy(MZ.exit);
+  const dx = tgt.x - mouse.position.x, dz = tgt.z - mouse.position.z, d = Math.hypot(dx, dz);
+  const spd = MZ.state === 'flee' ? 4.5 : MZ.state === 'out' ? 3 : 2.4;
+  if (MZ.state === 'steal') {
+    mouse.position.x = tgt.x; mouse.position.z = tgt.z;
+    mouse.rotation.y = lerpAngle(mouse.rotation.y, Math.atan2(bp.x - mouse.position.x, bp.z - mouse.position.z), 1 - Math.exp(-10 * dt));
+    mouse.position.y = Math.abs(Math.sin(t * 9)) * 0.03;
+    MZ.t -= dt;
+    if (MZ.t <= 0) {
+      const inside = kibs.filter(k => kibInBowl(k));
+      if (!inside.length || MZ.stolen >= 4) { MZ.state = 'out'; return; }
+      inside.sort((a, b) => b.body.translation().y - a.body.translation().y);
+      removeKib(inside[0]); MZ.stolen++; mouseKib.visible = true; squeak();
+      popAt(bp.x, 0.6, bp.z, '-1 🐭', '#8a7c9a'); MZ.t = 0.85;
+    }
+  } else if (d > 0.06) {
+    const st = Math.min(d, spd * dt);
+    mouse.position.x += dx / d * st; mouse.position.z += dz / d * st;
+    mouse.rotation.y = lerpAngle(mouse.rotation.y, Math.atan2(dx, dz), 1 - Math.exp(-14 * dt));
+    mouse.position.y = Math.abs(Math.sin(t * 28)) * 0.025;
+  } else if (MZ.state === 'in') { MZ.state = 'steal'; MZ.t = 0.4; }
+  else { MZ.state = 'off'; mouse.visible = false; }
+}
+
+/* ================= มะขามชอบข่วน (สุ่ม) ================= */
+let evId = 0;
+function walkPath(pts, cb, stop) {
+  const next = i => i >= pts.length ? (cb && cb()) : walkTo(pts[i].x, pts[i].z, () => next(i + 1), i === pts.length - 1 ? (stop ?? 0.06) : 0.25);
+  next(0);
+}
+function backToWait(id) {
+  const W = waitSpot(), bp = bowlBody.translation(), side = W.x >= bp.x ? 1 : -1;
+  walkPath([{ x: bp.x + side * (BOWL.r1 + 0.85), z: bp.z }, W], () => { if (id !== evId) return; S.face = new THREE.Vector3(W.x - 0.8, 0, 4); G.event = false; });
+}
+function scratchScreen() {
+  const id = ++evId; G.event = true;
+  const bp = bowlBody.translation(), side = cat.position.x >= bp.x ? 1 : -1;
+  const front = { x: clamp(bp.x, -3.5, 3.5), z: Math.min(3.0, bp.z + BOWL.r1 + 1.0) };
+  say('มะขามอยากข่วน! 😼', 1500);
+  walkPath([{ x: bp.x + side * (BOWL.r1 + 0.85), z: bp.z }, front], () => {
+    if (id !== evId) return;
+    S.face = new THREE.Vector3(front.x, 0, front.z + 6); S.rear = true;
+    let n = 0;
+    const swipe = () => {
+      if (id !== evId) return;
+      S.swipeT = 0.32;
+      setTimeout(() => { if (id !== evId) return; addScratch(); scratchSfx(); G.shake = 0.4; }, 150);
+      if (++n < 3) setTimeout(swipe, 430);
+      else setTimeout(() => { if (id !== evId) return; S.rear = false; meow(1.15); say('ข่วนนน! แตะเช็ดรอยได้นะ 😹', 1800); backToWait(id); }, 550);
+    };
+    setTimeout(swipe, 350);
+  }, 0.08);
+}
+function swatBowl() {
+  const id = ++evId; G.event = true;
+  const bp = bowlBody.translation();
+  const dir = new THREE.Vector3(cat.position.x - bp.x, 0, cat.position.z - bp.z).normalize();
+  say('อุ๊ย มะขามจะปัดชาม! 😼', 1500);
+  walkTo(bp.x + dir.x * (BOWL.r1 + 0.62), bp.z + dir.z * (BOWL.r1 + 0.62), () => {
+    if (id !== evId) return;
+    S.face = new THREE.Vector3(bp.x, 0, bp.z);
+    let n = 0;
+    const swipe = () => {
+      if (id !== evId) return;
+      S.swipeT = 0.32;
+      setTimeout(() => {
+        if (id !== evId) return;
+        const b2 = bowlBody.translation(), inside = kibs.filter(k => kibInBowl(k));
+        const near = k => { const t = k.body.translation(); return (t.x - b2.x) * dir.x + (t.z - b2.z) * dir.z; };
+        inside.sort((a, b) => near(b) - near(a));
+        inside.slice(0, Math.floor(rand(3, 7))).forEach(k => {
+          k.swatted = true;
+          k.body.setLinvel({ x: -dir.x * rand(2.5, 4.5) + rand(-1.2, 1.2), y: rand(4.5, 7.5), z: -dir.z * rand(2.5, 4.5) + rand(-1.2, 1.2) }, true);
+        });
+        G.shake = 0.18; clickSound('bowl', 9);
+      }, 140);
+      if (++n < 2) setTimeout(swipe, 460);
+      else setTimeout(() => { if (id !== evId) return; say('ปัดเล่นนน 😹', 1400); backToWait(id); }, 650);
+    };
+    setTimeout(swipe, 300);
+  }, 0.08);
+}
+function cancelEvents() { evId++; G.event = false; S.rear = false; S.swipeT = 0; S.zoom = false; }
+
+/* ================= combo ================= */
+const comboMult = () => 1 + Math.min(4, Math.floor(G.combo / 6));
+function setCombo(n) {
+  const before = comboMult();
+  G.combo = n; G.maxCombo = Math.max(G.maxCombo, n);
+  const el = $('combo'), m = comboMult();
+  el.textContent = n >= 3 ? `🔥 ${n} คอมโบ ×${m}` : '';
+  el.classList.toggle('show', n >= 3);
+  if (n >= 3) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  if (m > before) { const bp = bowlBody.translation(); popAt(bp.x, 0.9, bp.z, `COMBO ×${m}! 🔥`, '#ff7a2f', '1.6rem'); comboSfx(m); }
+}
+
+/* ================= game ================= */
+const G = { combo: 0, maxCombo: 0, comboPts: 0, bonus: 0, mouseT: 0, scratchT: 0, event: false, shake: 0, state: 'menu', level: 0, patience: 1, bowlT: 0, pourAcc: 0, poured: 0, idleT: 0, live: { inBowl: 0, spill: 0, fish: 0 }, hudT: 0, final: null, fishEaten: 0 };
+const aim = new THREE.Vector3(0, 0.3, 0.5);
+let held = false, pourDelay = 0, lastBonk = 0, lastPet = 0;
+
+function updateHUD() {
+  const L = LEVELS[G.level], st = G.live, max = L.target * 1.5;
+  $('lvl').textContent = `ด่าน ${G.level + 1}/${LEVELS.length} · ${L.name}`;
+  $('score').textContent = save.coins;
+  $('cnt').textContent = st.inBowl; $('tgt').textContent = L.target;
+  $('spill').textContent = st.spill; $('fish').textContent = st.fish;
+  const diff = st.inBowl - L.target;
+  const col = Math.abs(diff) <= 1 ? '#5fbf6a' : diff > 1 ? '#ff6b6b' : '#f6a54b';
+  $('cnt').style.color = col;
+  $('fill').style.background = col;
+  $('fill').style.width = Math.min(100, st.inBowl / max * 100) + '%';
+  $('zone').style.left = ((L.target - 1) / max * 100) + '%';
+  $('zone').style.width = (2 / max * 100) + '%';
+  $('pat').style.width = (G.patience * 100) + '%';
+  $('pat').style.background = G.patience < 0.3 ? '#ff6b6b' : '#ff8fb1';
+  $('serve').disabled = G.state !== 'pour' || st.inBowl === 0;
+}
+
+function bowlMotion(L, tm) {
+  if (L.move === 'slide') return { x: BOWL0.x + Math.sin(tm / L.period * Math.PI * 2) * L.amp, z: BOWL0.z };
+  if (L.move === 'circle') { const a = tm / L.period * Math.PI * 2; return { x: BOWL0.x + Math.sin(a) * L.amp, z: BOWL0.z + Math.sin(a * 2) * 0.4 }; }
+  if (L.move === 'rock') { const a = tm / L.period * Math.PI * 2; return { x: BOWL0.x, z: BOWL0.z, rx: Math.sin(a) * L.tilt, rz: Math.sin(a * 0.73 + 1) * L.tilt * 0.7 }; }
+  return { x: BOWL0.x, z: BOWL0.z };
+}
+
+function startLevel(i) {
+  G.level = i; const L = LEVELS[i];
+  G.state = 'ready'; G.patience = 1; G.bowlT = 0; G.poured = 0; G.pourAcc = 0; G.idleT = 0; G.fishEaten = 0;
+  G.live = { inBowl: 0, spill: 0, fish: 0 };
+  $('result').classList.remove('show');
+  clearKibs(); clearItems(); clearScratches(); cancelEvents();
+  MZ.state = 'off'; mouse.visible = false;
+  G.maxCombo = 0; G.comboPts = 0; G.bonus = 0; setCombo(0);
+  G.mouseT = rand(5, 9); G.scratchT = rand(7, 12);
+  bowlBody.setTranslation({ x: BOWL0.x, y: BOWL0.y, z: BOWL0.z }, true);
+  bowlBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+  bowlBody.setNextKinematicTranslation({ x: BOWL0.x, y: BOWL0.y, z: BOWL0.z });
+  bowlBody.setNextKinematicRotation({ x: 0, y: 0, z: 0, w: 1 });
+  buildBowl(L.scale || 1);
+  fans.forEach(f => f.f.visible = !!L.wind && (L.windAlt || Math.sign(L.wind) === -f.side));
+  $('windTag').textContent = '';
+  S.eating = false; headCol.setEnabled(true);
+  const W = waitSpot(); walkTo(W.x, W.z, () => { S.face = new THREE.Vector3(W.x - 0.8, 0, 4); });
+  scoopKib.visible = true;
+  updateHUD();
+  banner(`ด่าน ${i + 1}: ${L.name}`, `มะขามขอ ${L.target} เม็ด 🐟` + (L.wind ? ' • ระวังลม!' : L.move === 'rock' ? ' • ชามโยก!' : L.scale && L.scale < 1 ? ' • ชามเล็กนะ' : ''), 2000);
+  setTimeout(() => {
+    G.state = 'pour'; scoop.visible = aimRing.visible = aimLine.visible = true;
+    meow(); say(`ขอ ${L.target} เม็ดนะ 😽`, 2200);
+    updateHUD();
+  }, 2100);
+}
+
+function serve(auto) {
+  if (G.state !== 'pour') return;
+  G.state = 'settle'; held = false;
+  scoop.visible = aimRing.visible = aimLine.visible = false;
+  cancelEvents();
+  if (MZ.state === 'in' || MZ.state === 'steal') MZ.state = 'out';
+  updateHUD();
+  if (auto) { say('ไม่รอแล้วว! 😾', 1600); meow(0.85); }
+  setTimeout(() => {
+    G.final = bowlState();
+    G.final.items = items.filter(it => !it.gone && kibInBowl(it)).map(it => it.type);
+    G.state = 'eat';
+    const bp = bowlPos();
+    const goEat = () => {
+    const dir = new THREE.Vector3(cat.position.x - bp.x, 0, cat.position.z - bp.z);
+    if (dir.lengthSq() < 1e-4) dir.set(1, 0, 0);
+    dir.normalize();
+    walkTo(bp.x + dir.x * 1.02, bp.z + dir.z * 1.02, () => {
+      S.face = new THREE.Vector3(bp.x, 0, bp.z); S.zoom = false;
+      // ลูกบอลในชาม → มะขามปัดออกก่อน
+      items.filter(it => it.type === 'ball' && !it.gone && kibInBowl(it)).forEach(it => {
+        S.swipeT = 0.32; it.gone = true;
+        setTimeout(() => it.body.setLinvel({ x: -dir.x * 4, y: 6, z: -dir.z * 4 }, true), 140);
+        say('ลูกบอลมาอยู่ในชามได้ไง! 😾', 1600);
+      });
+      if (G.final.inBowl === 0) { say('ชามว่างเปล่า... 😿', 2000); meow(0.8); setTimeout(showResult, 1800); return; }
+      S.eating = true; headCol.setEnabled(false);
+      say('ง่ำ ง่ำ ง่ำ 😋', 2400);
+      const eatOne = () => {
+        const bp2 = bowlPos();
+        const inside = kibs.filter(k => kibInBowl(k, bp2));
+        if (!inside.length) {
+          S.eating = false; headCol.setEnabled(true);
+          setTimeout(showResult, 600); return;
+        }
+        inside.sort((a, b) => b.body.translation().y - a.body.translation().y);
+        const k = inside[0];
+        if (k.fish) { G.fishEaten++; burst('✨', 2); }
+        removeKib(k); crunch();
+        setTimeout(eatOne, clamp(2600 / G.final.inBowl, 45, 160));
+      };
+      setTimeout(eatOne, 650);
+    });
+    };
+    if (G.final.items.includes('catnip')) {   // แคทนิปในชาม → เมาแคทนิป วิ่งวน 2 รอบ
+      S.zoom = true; meow(1.5); say('เมาแคทนิปป~ 😵‍💫🌿', 2600);
+      const pts = []; for (let i = 0; i < 16; i++) { const a = i / 8 * Math.PI * 2; pts.push({ x: bp.x + Math.sin(a) * 1.5, z: bp.z + Math.cos(a) * 1.5 }); }
+      walkPath(pts, goEat);
+    } else goEat();
+  }, 1300);
+}
+
+function showResult() {
+  G.state = 'result';
+  const L = LEVELS[G.level], st = G.final;
+  const diff = Math.abs(st.inBowl - L.target), sp = st.spill;
+  const bad = st.items || [];
+  let stars = st.inBowl < L.target * 0.5 ? 0 : (diff <= 1 && sp <= 1) ? 3 : (diff <= 3 && sp <= 4) ? 2 : 1;
+  if (stars && bad.length) stars = Math.max(1, stars - bad.length);       // ของแปลกในชาม หักดาว
+  const perfect = st.inBowl === L.target && !bad.length;
+  const pts = stars ? stars * 100 + G.fishEaten * (30 + 15 * tier('lucky')) + Math.max(0, 50 - sp * 5) + G.comboPts + G.bonus + (perfect ? 100 : 0) : 0;
+  save.coins += pts;
+  if (stars) { save.unlocked = Math.max(save.unlocked, Math.min(G.level + 1, LEVELS.length - 1)); save.best[G.level] = Math.max(save.best[G.level] || 0, stars); }
+  persist();
+  let line;
+  if (bad.includes('ball')) line = 'มีลูกบอลอยู่ในชาม กินไม่ได้นะ 😾';
+  else if (bad.includes('catnip')) line = 'ใส่แคทนิปมา เมาเลยย 😵‍💫';
+  else if (stars === 3) line = 'พอดีเป๊ะ! มะขามรักที่สุดเลย 😻';
+  else if (st.inBowl === 0) line = 'ไม่มีข้าวให้มะขามเลยหรอ 😿';
+  else if (st.inBowl > L.target + 1) line = 'เยอะไปนิด อิ่มจุกเลยย 😵';
+  else if (st.inBowl < L.target - 1) line = stars ? 'ยังไม่อิ่มเลยย ขออีกนิด 🥺' : 'แค่นี้เองหรอ หิวอยู่นะ 😾';
+  else line = 'หกเลอะเต็มห้องเลยย 🙀';
+  if (perfect) showPerfect();
+  if (stars === 3) { meow(1.2); purr(1.8); burst('💗', 8); S.jump = 0; }
+  else if (stars) { meow(1.05); burst('💗', 3); }
+  else { meow(0.8); S.flatEars = 1.5; }
+  say(line, 2600);
+
+  $('rTitle').textContent = stars ? `ด่าน ${G.level + 1} ผ่านแล้ว!` : `ด่าน ${G.level + 1} ยังไม่ผ่าน`;
+  $('rStars').innerHTML = [0, 1, 2].map(i => `<span style="animation-delay:${0.25 + i * 0.2}s">${i < stars ? '⭐' : '☆'}</span>`).join('');
+  $('rSay').textContent = line;
+  $('rStat').innerHTML = `${perfect ? '💯 <b>PERFECT</b> +100 🪙<br>' : ''}ในชาม ${st.inBowl}/${L.target} เม็ด • หก ${sp} เม็ด<br>🔥 คอมโบสูงสุด ${G.maxCombo} (+${G.comboPts}) • ปลาทอง ${G.fishEaten} ตัว` + (G.bonus ? `<br>🐭 โบนัสไล่หนู/เก็บของ +${G.bonus}` : '') + (bad.length ? `<br>⚠️ ของแปลกในชาม: ${bad.map(b => b === 'ball' ? '🔴 ลูกบอล' : '🌿 แคทนิป').join(', ')} (หักดาว)` : '');
+  $('rPts').textContent = pts ? `+${pts} 🪙 (มี ${save.coins} เหรียญ)` : '';
+  const btns = $('rBtns'); btns.innerHTML = '';
+  const add = (txt, fn, primary) => { const b = document.createElement('button'); b.textContent = txt; if (primary) b.className = 'primary'; b.onclick = fn; btns.appendChild(b); };
+  add('↺ เล่นด่านนี้อีกครั้ง', () => startLevel(G.level), !stars);
+  if (stars && G.level < LEVELS.length - 1) add('ด่านต่อไป ▶', () => startLevel(G.level + 1), true);
+  if (stars && G.level === LEVELS.length - 1) add('💌 มะขามมีอะไรจะบอก...', openLetter, true);
+  add('🛒 อัปเกรด', () => openShop(), false);
+  add('🏠', goHome, false);
+  setTimeout(() => $('result').classList.add('show'), 1400);
+}
+
+function openLetter() {
+  $('result').classList.remove('show');
+  $('letter').classList.add('show'); meow(1.15);
+  const el = $('letterText'); el.textContent = ''; let i = 0;
+  clearInterval(openLetter.t);
+  openLetter.t = setInterval(() => { el.textContent = LETTER.slice(0, ++i); if (i >= LETTER.length) clearInterval(openLetter.t); }, 55);
+}
+$('closeLetter').onclick = () => {
+  $('letter').classList.remove('show'); burst('💗', 12); purr(2);
+  const btns = $('rBtns'); btns.innerHTML = '';
+  $('rTitle').textContent = 'มะขามอิ่มแปล้แล้ว 😻'; $('rStars').innerHTML = '💗💗💗';
+  $('rSay').textContent = `มีเหรียญ ${save.coins} 🪙`; $('rStat').textContent = 'เล่นด่านไหนซ้ำก็ได้ เก็บเหรียญไปแต่งตัวมะขามต่อนะ'; $('rPts').textContent = '';
+  const b = document.createElement('button'); b.className = 'primary'; b.textContent = '🏠 เลือกด่าน';
+  b.onclick = goHome; btns.appendChild(b);
+  const b2 = document.createElement('button'); b2.textContent = '🛒 ร้านค้า'; b2.onclick = () => openShop(); btns.appendChild(b2);
+  setTimeout(() => $('result').classList.add('show'), 1200);
+};
+$('serve').onclick = () => serve(false);
+
+/* ================= shop / menu ================= */
+let shopTab = 'up';
+function openShop() { renderShop(); $('shop').classList.add('show'); }
+function shopItem(ic, name, desc, dots, label, disabled, fn, worn) {
+  const el = document.createElement('div'); el.className = 'item';
+  el.innerHTML = `<div class="ic">${ic}</div><div class="tx"><b>${name}</b> <span class="dots">${dots}</span><br>${desc}</div>`;
+  const b = document.createElement('button'); b.textContent = label; b.disabled = disabled; if (worn) b.className = 'worn';
+  b.onclick = fn; el.appendChild(b); $('shopList').appendChild(el);
+}
+function renderShop() {
+  $('coins').textContent = save.coins; $('score').textContent = save.coins;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === shopTab));
+  $('shopList').innerHTML = '';
+  if (shopTab === 'up') UPGRADES.forEach(u => {
+    const tr = tier(u.id), max = u.cost.length, cost = u.cost[tr];
+    shopItem(u.ic, u.name, u.desc, '●'.repeat(tr) + '○'.repeat(max - tr), tr >= max ? 'สูงสุดแล้ว' : `🪙 ${cost}`, tr >= max || save.coins < cost, () => {
+      save.coins -= cost; save.up[u.id] = tr + 1; persist(); meow(1.2); burst('✨', 4); renderShop();
+    });
+  });
+  else COSMETICS.forEach(c => {
+    const own = !!save.own[c.id], wear = !!save.wear[c.id];
+    shopItem(c.ic, c.name, c.desc, '', own ? (wear ? 'ใส่อยู่ ✓' : 'ใส่') : `🪙 ${c.cost}`, !own && save.coins < c.cost, () => {
+      if (!own) { save.coins -= c.cost; save.own[c.id] = true; save.wear[c.id] = true; meow(1.25); burst('💗', 5); }
+      else save.wear[c.id] = !wear;
+      persist(); applyCosmetics(); renderShop();
+    }, own && wear);
+  });
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { shopTab = b.dataset.tab; renderShop(); });
+$('shopClose').onclick = () => { $('shop').classList.remove('show'); renderLevels(); };
+$('shopBtn').onclick = () => { ac(); openShop(); };
+function renderLevels() {
+  const box = $('levels'); box.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    const b = document.createElement('button'), st = save.best[i] || 0;
+    b.innerHTML = i <= save.unlocked ? `${i + 1}<small>${st ? '⭐'.repeat(st) : '·'}</small>` : `🔒<small>&nbsp;</small>`;
+    b.disabled = i > save.unlocked; b.onclick = () => beginGame(i);
+    box.appendChild(b);
+  });
+  $('start').textContent = save.unlocked > 0 ? `▶ เล่นต่อ ด่าน ${save.unlocked + 1}` : 'เริ่มเกม 🐾';
+}
+function beginGame(i) {
+  ac();
+  $('intro').classList.add('hide');
+  $('hud').style.display = 'block'; $('bottom').style.display = 'flex';
+  G.state = 'ready'; setCamera();
+  startLevel(i);
+}
+function goHome() {
+  $('result').classList.remove('show');
+  G.state = 'menu'; held = false; clearKibs(); clearItems(); clearScratches(); cancelEvents();
+  MZ.state = 'off'; mouse.visible = false; setCombo(0);
+  scoop.visible = aimRing.visible = aimLine.visible = false;
+  fans.forEach(f => f.f.visible = false);
+  $('hud').style.display = 'none'; $('bottom').style.display = 'none';
+  renderLevels(); $('intro').classList.remove('hide');
+}
+
+/* ================= input ================= */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.3);
+function pointerRay(e) {
+  ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+}
+const lastPtr = { x: innerWidth / 2, y: innerHeight / 2, mouse: false };
+function setAim(e) {
+  lastPtr.x = e.clientX; lastPtr.y = e.clientY; lastPtr.mouse = e.pointerType === 'mouse';
+  pointerRay(e);
+  const p = new THREE.Vector3();
+  if (ray.ray.intersectPlane(aimPlane, p)) { aim.x = clamp(p.x, -4.2, 4.2); aim.z = clamp(p.z, -3.2, 3.6); }
+}
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || held) setAim(e); });
+canvas.addEventListener('pointerdown', e => {
+  ac();
+  pointerRay(e);
+  for (const it of items) if (!it.gone && ray.intersectObject(it.hit).length) return flickItem(it);
+  if (mouse.visible && ray.intersectObject(mouseHit).length) return chaseMouse();
+  if (ray.intersectObject(hitbox).length) return petCat();
+  setAim(e);
+  if (G.state !== 'pour') return;
+  held = true; pourDelay = e.pointerType === 'mouse' ? 0.05 : 0.15;
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+});
+const release = () => { held = false; };
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
+
+function petCat() {
+  const now = performance.now();
+  if (now - lastPet < 2500 || S.eating || S.target || G.event) { meow(1.1); return; }
+  lastPet = now;
+  S.petting = true; purr(); burst('💗', 5);
+  say(['ครืดด ครืดด~ 💗', 'นอนแอ่นแต้แอ่นว่า 😌', 'รอได้ๆ 😽'][Math.floor(Math.random() * 3)], 2000);
+  if (G.state === 'pour') G.patience = Math.min(1, G.patience + 0.18);
+  setTimeout(() => S.petting = false, 2000);
+}
+
+/* ================= start ================= */
+$('start').disabled = false;
+renderLevels();
+$('start').onclick = () => beginGame(save.unlocked);
+
+/* ================= main loop ================= */
+const m4 = new THREE.Matrix4(), pv = new THREE.Vector3(), qv = new THREE.Quaternion(), sv = new THREE.Vector3(), headW = new THREE.Vector3();
+const clock = new THREE.Clock();
+let acc = 0;
+const qBowl = new THREE.Quaternion(), qIdent = new THREE.Quaternion(), eBowl = new THREE.Euler();
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  const L = LEVELS[G.level];
+
+  // ----- pouring -----
+  if (G.state === 'pour') {
+    G.bowlT += dt;
+    G.patience -= dt / (L.patience * (1 + 0.2 * tier('treat')));
+    const pouring = held && pourDelay <= 0;
+    if (held && pourDelay > 0) pourDelay -= dt;
+    scoop.position.set(aim.x - 0.09, L.h + 0.2, aim.z);
+    scoopTilt.rotation.z = damp(scoopTilt.rotation.z, pouring ? -1.15 : 0, 12, dt);
+    aimRing.position.set(aim.x, 0.012, aim.z);
+    const lp = aimLineGeo.attributes.position;
+    lp.setXYZ(0, aim.x, L.h, aim.z); lp.setXYZ(1, aim.x, 0.02, aim.z); lp.needsUpdate = true;
+    aimLine.computeLineDistances();
+    const cap = L.target * 2 + 25;
+    if (pouring && scoopTilt.rotation.z < -0.7) {
+      G.idleT = 0;
+      G.pourAcc += dt * 13;
+      while (G.pourAcc >= 1) {
+        G.pourAcc -= 1;
+        if (G.poured < cap) {
+          const fish = Math.random() < 0.07 + 0.04 * tier('lucky'), sp = 0.035 * scoopSpread();
+          const pos = { x: aim.x + rand(-sp, sp), y: L.h + rand(-0.03, 0.03), z: aim.z + rand(-sp, sp) };
+          const r = Math.random(), live = items.filter(it => !it.gone).length;
+          if (G.level >= 1 && live < 3 && r < 0.03) { spawnItem('ball', pos); boing(6); }
+          else if (G.level >= 2 && live < 3 && r < 0.055) spawnItem('catnip', pos);
+          else if (spawnKibble(pos, fish)) G.poured++;
+        } else if (scoopKib.visible) { scoopKib.visible = false; say('อาหารในที่ตักหมดแล้ว 😹'); }
+      }
+    } else {
+      G.idleT += dt;
+      if (G.idleT > 6) { G.idleT = 0; meow(); say(['เมี้ยว~ เร็วๆ 🥺', 'หิวแล้วนะ 😿', 'ข้าวอยู่ไหนน 👀'][Math.floor(Math.random() * 3)]); }
+    }
+    if (G.patience <= 0) { G.patience = 0; serve(true); }
+    // หนู (ด่าน 3 ขึ้นไป)
+    if (G.level >= 2 && MZ.state === 'off') { G.mouseT -= dt; if (G.mouseT <= 0 && G.live.inBowl >= 3) { spawnMouse(); G.mouseT = rand(10, 16); } }
+    // มะขามมาข่วน/ปัดชาม (ด่าน 2 ขึ้นไป)
+    if (G.level >= 1 && !G.event && !S.target && !S.petting && MZ.state === 'off') {
+      G.scratchT -= dt;
+      if (G.scratchT <= 0) { (Math.random() < 0.6 || G.live.inBowl < 4 ? scratchScreen : swatBowl)(); G.scratchT = rand(13, 20); }
+    }
+  }
+  updateMouse(dt, t);
+
+  // ----- cat -----
+  updateCat(dt, t);
+  cat.updateMatrixWorld(true);
+  head.getWorldPosition(headW);
+
+  // ----- physics -----
+  acc += dt;
+  let steps = 0;
+  while (acc >= world.timestep && steps < 6) {
+    acc -= world.timestep; steps++;
+    if (G.state === 'pour') {
+      const bm = bowlMotion(L, G.bowlT);
+      bowlBody.setNextKinematicTranslation({ x: bm.x, y: 0, z: bm.z });
+      qBowl.setFromEuler(eBowl.set(bm.rx || 0, 0, bm.rz || 0));
+    } else {
+      const bt = bowlBody.translation(), br = bowlBody.rotation();
+      bowlBody.setNextKinematicTranslation({ x: bt.x, y: 0, z: bt.z });
+      qBowl.set(br.x, br.y, br.z, br.w).slerp(qIdent, 0.03);   // ชามค่อยๆ กลับมาตั้งตรง
+    }
+    bowlBody.setNextKinematicRotation({ x: qBowl.x, y: qBowl.y, z: qBowl.z, w: qBowl.w });
+    if (G.state === 'pour' || G.state === 'settle') applyForces(world.timestep, L);
+    catBody.setNextKinematicTranslation({ x: cat.position.x, y: cat.position.y + rig.position.y, z: cat.position.z });
+    catBody.setNextKinematicRotation({ x: 0, y: Math.sin(cat.rotation.y / 2), z: 0, w: Math.cos(cat.rotation.y / 2) });
+    headBody.setNextKinematicTranslation({ x: headW.x, y: headW.y, z: headW.z });
+    world.step();
+  }
+  if (steps === 6) acc = 0;
+
+  // ----- sync visuals, impact sounds, bonk detection -----
+  const bp = bowlBody.translation();
+  bowl.position.set(bp.x, bp.y, bp.z);
+  { const br = bowlBody.rotation(); bowl.quaternion.set(br.x, br.y, br.z, br.w); }
+  // พัดลม + ป้ายบอกทิศลม
+  if (L.wind && G.state !== 'menu') {
+    const w = G.state === 'pour' ? windNow(L) : 0;
+    fans.forEach(f => { const on = Math.sign(w) === -f.side; f.blades.rotation.z += dt * (on ? Math.abs(w) * 3 : 0.5); });
+    const tag = Math.abs(w) < 1 ? '🌬️ ลมสงบ' : `🌬️ ลม ${w < 0 ? '←' : '→'} ${'〰'.repeat(Math.min(3, Math.ceil(Math.abs(w) / 3)))}`;
+    if ($('windTag').textContent !== tag) $('windTag').textContent = tag;
+  }
+  let ki = 0, fi = 0;
+  for (let i = kibs.length - 1; i >= 0; i--) {
+    const k = kibs[i], tr = k.body.translation();
+    if (tr.y < -2) { removeKib(k); continue; }
+    const v = k.body.linvel(), sp = Math.hypot(v.x, v.y, v.z);
+    const dv = k.last - sp;
+    if (dv > 2.5) {
+      const nearBowl = Math.hypot(tr.x - bp.x, tr.z - bp.z) < 0.72 && tr.y < 0.4;
+      clickSound(nearBowl ? (tr.y > 0.12 && Math.random() < 0.5 ? 'kib' : 'bowl') : 'floor', dv);
+    }
+    if (!k.hitCat && sp > 3 && Math.hypot(tr.x - headW.x, tr.y - headW.y, tr.z - headW.z) < 0.42) {
+      k.hitCat = true;
+      if (performance.now() - lastBonk > 1300 && G.state === 'pour') {
+        lastBonk = performance.now();
+        S.flatEars = 0.7; meow(1.35);
+        say(['เจ็บไหมตัวเอง 🥺', 'โอ๊ย! ตกใส่หัว 🙀', 'เทใส่ชามสิ ไม่ใช่หัวมะขาม 😾'][Math.floor(Math.random() * 3)], 1800);
+        G.patience = Math.max(0, G.patience - 0.05);
+      }
+    }
+    k.last = sp;
+    // คอมโบ: เม็ดลงกลางชามติดๆ กัน / หกพื้น = คอมโบหาย
+    if (G.state === 'pour' || G.state === 'settle') {
+      if (!k.landed && tr.y - bp.y < BOWL.y1 + 0.05 && kibInBowl(k)) {
+        k.landed = true;
+        if (Math.hypot(tr.x - bp.x, tr.z - bp.z) < BOWL.r1 * 0.45) { setCombo(G.combo + 1); G.comboPts += comboMult(); }
+      } else if (!k.spilled && tr.y < 0.12 && !kibInBowl(k)) {
+        k.spilled = true;
+        if (!k.swatted) { if (G.combo >= 3) popAt(tr.x, 0.4, tr.z, 'หก! คอมโบหาย 💦', '#5aa9e6'); if (G.combo) setCombo(0); }
+      }
+    }
+  }
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i], tr = it.body.translation(), r = it.body.rotation();
+    if (tr.y < -2) { removeItem(it); continue; }
+    it.g.position.set(tr.x, tr.y, tr.z); it.g.quaternion.set(r.x, r.y, r.z, r.w);
+    const v = it.body.linvel(), sp = Math.hypot(v.x, v.y, v.z);
+    if (it.type === 'ball' && it.last - sp > 2) boing(it.last - sp);
+    it.last = sp;
+  }
+  for (const k of kibs) {
+    const tr = k.body.translation(), r = k.body.rotation();
+    pv.set(tr.x, tr.y, tr.z); qv.set(r.x, r.y, r.z, r.w); sv.setScalar(k.scale);
+    m4.compose(pv, qv, sv);
+    if (k.fish) fishMesh.setMatrixAt(fi++, m4);
+    else { kibMesh.setMatrixAt(ki, m4); kibMesh.setColorAt(ki, k.color); ki++; }
+  }
+  kibMesh.count = ki; fishMesh.count = fi;
+  kibMesh.instanceMatrix.needsUpdate = true; fishMesh.instanceMatrix.needsUpdate = true;
+  if (kibMesh.instanceColor) kibMesh.instanceColor.needsUpdate = true;
+
+  // ----- HUD -----
+  G.hudT -= dt;
+  if (G.hudT <= 0 && (G.state === 'pour' || G.state === 'settle')) { G.hudT = 0.12; G.live = bowlState(); updateHUD(); }
+
+  wallHeart.scale.setScalar(1.1 * (1 + 0.08 * Math.pow(Math.max(0, Math.sin(t * 3)), 6)));
+  // กล้องตามชาม/มะขาม
+  camFocus.x = damp(camFocus.x, bp.x * 0.7 + cat.position.x * 0.3, 2.2, dt);
+  camFocus.z = damp(camFocus.z, bp.z * 0.75 + cat.position.z * 0.25, 2.2, dt);
+  camLook.x = camFocus.x; camLook.z = camFocus.z;
+  camera.position.copy(camLook).add(camOffset);
+  if (G.state === 'menu') camera.position.x += Math.sin(t * 0.25) * 1.2;
+  camera.lookAt(camLook);
+  if (G.shake > 0) { camera.position.x += rand(-1, 1) * G.shake * 0.12; camera.position.y += rand(-1, 1) * G.shake * 0.12; G.shake = Math.max(0, G.shake - dt * 1.5); }
+  if ((held || lastPtr.mouse) && G.state === 'pour') setAim({ clientX: lastPtr.x, clientY: lastPtr.y, pointerType: lastPtr.mouse ? 'mouse' : 'touch' });
+
+  if (bubble.classList.contains('show')) {
+    const p = headScreen();
+    bubble.style.left = p.x + 'px'; bubble.style.top = (p.y - 10) + 'px';
+  }
+  composer.render();
+});
+</script>
+</body>
+</html>
